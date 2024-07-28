@@ -21,7 +21,7 @@ class DataStorage:
                 writer.writeheader()
             for key_event in data:
                 writer.writerow({
-                    'time': key_event['time'].strftime("%Y-%m-%d %H:%M:%S"),
+                    'time' :datetime.strptime(key_event['time'], "%Y-%m-%d %H:%M:%S"),
                     'key': key_event['key']
                 })
 
@@ -39,7 +39,7 @@ class DataStorage:
             reader = csv.DictReader(file)
             for row in reader:
                 data.append({
-                    'time': datetime.strptime(row['time'], "%Y-%m-%d %H:%M:%S"),
+                    'time': datetime.strptime(str(row['time']), "%Y-%m-%d %H:%M:%S"),
                     'key': row['key']
                 })
         

@@ -3,31 +3,22 @@ from tkinter import ttk
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import matplotlib.pyplot as plt
-from matplotlib import font_manager
+import unicodedata
 
-import matplotlib
-import platform
-plt.rcParams['font.family'] = 'SimHei'
 class StatisticsView(tk.Toplevel):
     def __init__(self, master, controller):
         super().__init__(master)
         self.controller = controller
-        self.title("KeyMaster 统计")
+        self.title("KeyMaster Statistics")
         self.geometry("800x600")
-        self.set_global_font()
+        
+        self.protocol("WM_DELETE_WINDOW", self.on_closing)
+        
         self.create_widgets()
-
-    def set_global_font(self):
-        # 根据操作系统选择合适的字体
-        if platform.system() == 'Windows':
-            font_name = 'Microsoft YaHei'
-        elif platform.system() == 'Darwin':  # macOS
-            font_name = 'Arial Unicode MS'
-        else:  # Linux and others
-            font_name = 'DejaVu Sans'
-
-        # 设置matplotlib的全局字体
-        matplotlib.rc('font', family=font_name)
+        
+    def on_closing(self):
+        self.controller.stats_view = None
+        self.destroy()
 
     def create_widgets(self):
         self.notebook = ttk.Notebook(self)
@@ -37,9 +28,9 @@ class StatisticsView(tk.Toplevel):
         self.hourly_dist_frame = ttk.Frame(self.notebook)
         self.summary_frame = ttk.Frame(self.notebook)
 
-        self.notebook.add(self.key_freq_frame, text='按键频率')
-        self.notebook.add(self.hourly_dist_frame, text='每小时分布')
-        self.notebook.add(self.summary_frame, text='摘要')
+        self.notebook.add(self.key_freq_frame, text='Key Frequency')
+        self.notebook.add(self.hourly_dist_frame, text='Hourly Distribution')
+        self.notebook.add(self.summary_frame, text='Summary')
 
         self.create_key_freq_chart()
         self.create_hourly_dist_chart()
@@ -62,57 +53,86 @@ class StatisticsView(tk.Toplevel):
         self.summary_text.pack(expand=True, fill='both')
 
     def update_charts(self, stats):
+        if not self.winfo_exists():
+            return
         self.update_key_freq_chart(stats['key_counts'])
         self.update_hourly_dist_chart(stats['hourly_counts'])
         self.update_summary(stats)
 
     def update_key_freq_chart(self, key_counts):
         self.key_freq_plot.clear()
-        keys = list(key_counts.keys())
+        keys = [self.format_key_name(k) for k in key_counts.keys()]
         counts = list(key_counts.values())
         
-        # 处理特殊按键名称
-        keys = [self.format_key_name(key) for key in keys]
+        # 限制显示的键数量，例如只显示前20个最常用的键
+        if len(keys) > 20:
+            sorted_items = sorted(zip(keys, counts), key=lambda x: x[1], reverse=True)
+            keys, counts = zip(*sorted_items[:20])
         
         self.key_freq_plot.bar(keys, counts)
-        self.key_freq_plot.set_title("按键频率")
-        self.key_freq_plot.set_xlabel("按键")
-        self.key_freq_plot.set_ylabel("频率")
+        self.key_freq_plot.set_title("Key Frequency (Top 20)")
+        self.key_freq_plot.set_xlabel("Keys")
+        self.key_freq_plot.set_ylabel("Frequency")
         plt.setp(self.key_freq_plot.get_xticklabels(), rotation=45, ha='right')
         self.key_freq_figure.tight_layout()
         self.key_freq_canvas.draw()
-    
-    def format_key_name(self, key):
-        # 处理特殊按键名称
-        special_keys = {
-            'Key.space': '空格',
-            'Key.enter': '回车',
-            'Key.backspace': '退格',
-            'Key.shift': 'Shift',
-            'Key.ctrl': 'Ctrl',
-            'Key.alt': 'Alt',
-            # 添加更多特殊按键的映射
-        }
-        return special_keys.get(key, key)
 
     def update_hourly_dist_chart(self, hourly_counts):
         self.hourly_dist_plot.clear()
         hours = list(hourly_counts.keys())
         counts = list(hourly_counts.values())
         self.hourly_dist_plot.bar(hours, counts)
-        self.hourly_dist_plot.set_title("每小时按键分布")
-        self.hourly_dist_plot.set_xlabel("小时")
-        self.hourly_dist_plot.set_ylabel("按键次数")
+        self.hourly_dist_plot.set_title("Hourly Key Distribution")
+        self.hourly_dist_plot.set_xlabel("Hour")
+        self.hourly_dist_plot.set_ylabel("Key Count")
         self.hourly_dist_figure.tight_layout()
         self.hourly_dist_canvas.draw()
 
     def update_summary(self, stats):
+        if not self.winfo_exists():
+            return
         summary = f"""
-            总按键次数: {stats['total_keystrokes']}
-            记录开始时间: {stats['start_time']}
-            记录结束时间: {stats['end_time']}
-            总时长: {stats['total_duration']}
-            每分钟按键次数: {stats['keystrokes_per_minute']:.2f}
+            Total keystrokes: {stats['total_keystrokes']}
+            Start time: {stats['start_time']}
+            End time: {stats['end_time']}
+            Total duration: {stats['total_duration']}
+            Keystrokes per minute: {stats['keystrokes_per_minute']:.2f}
         """
         self.summary_text.delete(1.0, tk.END)
         self.summary_text.insert(tk.END, summary)
+
+    def format_key_name(self, key_combination):
+        special_keys = {
+            'Key.space': 'Space',
+            'Key.enter': 'Enter',
+            'Key.backspace': 'Backspace',
+            'Key.shift': 'Shift',
+            'Key.ctrl': 'Ctrl',
+            'Key.alt': 'Alt',
+            'Key.cmd': 'Cmd',
+            'Key.caps_lock': 'CapsLock',
+            'Key.tab': 'Tab',
+            'Key.esc': 'Esc',
+            # 添加更多特殊键的映射
+        }
+        
+        parts = key_combination.split('+')
+        formatted_parts = []
+        
+        for part in parts:
+            if part in special_keys:
+                formatted_parts.append(special_keys[part])
+            elif part.startswith('Key.'):
+                # 对于未在 special_keys 中列出的特殊键，移除 'Key.' 前缀并大写
+                formatted_parts.append(part[4:].capitalize())
+            elif len(part) == 1:
+                # 对于单个字符，直接大写
+                formatted_parts.append(part.upper())
+            else:
+                # 对于其他情况，保持原样
+                formatted_parts.append(part)
+        
+        # 对组合键进行排序，使显示更一致
+        formatted_parts.sort(key=lambda x: (x not in special_keys.values(), x))
+        
+        return ' + '.join(formatted_parts)

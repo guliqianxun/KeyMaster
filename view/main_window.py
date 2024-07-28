@@ -26,5 +26,5 @@ class MainWindow(tk.Tk):
         self.status_label.config(text=message)
 
     def quit(self):
-        self.controller.stop_logging()
+        self.controller.on_closing()
         super().quit()
