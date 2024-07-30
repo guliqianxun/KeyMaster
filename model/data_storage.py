@@ -16,13 +16,14 @@ class DataStorage:
         file_exists = os.path.isfile(csv_file)
         
         with open(csv_file, 'a', newline='') as file:
-            writer = csv.DictWriter(file, fieldnames=['time', 'key'])
+            writer = csv.DictWriter(file, fieldnames=['time', 'key', 'action'])
             if not file_exists:
                 writer.writeheader()
             for key_event in data:
                 writer.writerow({
                     'time' :datetime.strptime(key_event['time'], "%Y-%m-%d %H:%M:%S"),
-                    'key': key_event['key']
+                    'key': key_event['key'],
+                    'action': key_event['action']
                 })
 
     def load_data(self, date=None):
@@ -40,7 +41,8 @@ class DataStorage:
             for row in reader:
                 data.append({
                     'time': datetime.strptime(str(row['time']), "%Y-%m-%d %H:%M:%S"),
-                    'key': row['key']
+                    'key': row['key'],
+                    'action': row['action']
                 })
         
         return data

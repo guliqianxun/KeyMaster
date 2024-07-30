@@ -9,13 +9,21 @@ class StatsAnalyzer:
         key_counts = Counter()
         hourly_counts = {i: 0 for i in range(24)}
         
-        start_time = data[0]['time']
-        end_time = data[-1]['time']
+        start_time = datetime.strptime(str(data[0]['time']), "%Y-%m-%d %H:%M:%S")
+        end_time = datetime.strptime(str(data[-1]['time']), "%Y-%m-%d %H:%M:%S")
         
         for event in data:
-            keys = event['key'].split('+')
-            key_counts.update(keys)
-            hourly_counts[event['time'].hour] += 1
+            time = datetime.strptime(str(event['time']), "%Y-%m-%d %H:%M:%S")
+            action = event['action']
+            key = event['key']
+
+            if action in ['press', 'hotkey']:
+                if action == 'hotkey':
+                    key_counts[key] += 1
+                else:
+                    key_counts[key] += 1
+                
+                hourly_counts[time.hour] += 1
 
         total_duration = end_time - start_time
         total_keystrokes = sum(key_counts.values())
@@ -33,10 +41,16 @@ class StatsAnalyzer:
     def get_daily_summary(self, data):
         daily_summary = {}
         for event in data:
-            date = event['time'].date()
+            time = datetime.strptime(str(event['time']), "%Y-%m-%d %H:%M:%S")
+            date = time.date()
+            action = event['action']
+            key = event['key']
+
             if date not in daily_summary:
                 daily_summary[date] = {'count': 0, 'keys': Counter()}
-            daily_summary[date]['count'] += 1
-            daily_summary[date]['keys'].update(event['key'].split('+'))
+            
+            if action in ['press', 'hotkey']:
+                daily_summary[date]['count'] += 1
+                daily_summary[date]['keys'][key] += 1
         
         return daily_summary

@@ -9,6 +9,23 @@ class KeyLogger:
         self.trigger_save = trigger_save
         self.pressed_keys = set()  # 用于跟踪所有当前按下的键
         self.listener = None
+        self.hotkeys = {
+            frozenset(['<ctrl>', 'c']): 'Ctrl+C',
+            frozenset(['<ctrl>', 'v']): 'Ctrl+V',
+            frozenset(['<alt>', '<f4>']): 'Alt+F4',
+            frozenset(['<ctrl>', '<shift>', 'esc']): 'Ctrl+Shift+Esc',
+            frozenset(['<ctrl>', 's']): 'Ctrl+S',
+            frozenset(['<ctrl>', 'a']): 'Ctrl+A',
+            frozenset(['<win>', 'd']): 'Win+D',
+            frozenset(['<win>', 'r']): 'Win+R',
+            frozenset(['<win>', 'e']): 'Win+E',
+            frozenset(['<ctrl>', 'f']): 'Ctrl+F',
+            frozenset(['<ctrl>', 'z']): 'Ctrl+Z',
+            frozenset(['<ctrl>', 'h']): 'Ctrl+H',
+            frozenset(['<ctrl>', 'x']): 'Ctrl+X',
+            frozenset(['<alt>', 'tab']): 'Alt+Tab'
+        }
+        self.last_hotkey = None
 
     def start_logging(self):
         self.listener = keyboard.Listener(
@@ -21,31 +38,37 @@ class KeyLogger:
             self.listener.stop()
 
     def _on_press(self, key):
-        # 检查这个键是否已经被按下
         key_str = self._key_to_string(key)
-        if key_str in self.pressed_keys:
-            return  # 如果已经按下，不进行重复记录
+        timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         
-        self.pressed_keys.add(key_str)
-        
-        # timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        # key_combination = self._get_key_combination(key)
-        # self.keys.append({'time': timestamp, 'key': key_combination, 'action': 'press'})
-        
-        # if len(self.keys) >= self.keys.maxlen:
-        #     self.trigger_save()
+        if key_str not in self.pressed_keys:
+            self.pressed_keys.add(key_str)
+            
+            # 检查是否触发了热键
+            hotkey = self._check_hotkey()
+            if hotkey:
+                if hotkey != self.last_hotkey:
+                    self.keys.append({'time': timestamp, 'key': hotkey, 'action': 'hotkey'})
+                    self.last_hotkey = hotkey
+            else:
+                self.keys.append({'time': timestamp, 'key': key_str, 'action': 'press'})
+                self.last_hotkey = None
+            
+            if len(self.keys) >= self.keys.maxlen:
+                self.trigger_save()
 
     def _on_release(self, key):
         key_str = self._key_to_string(key)
         if key_str in self.pressed_keys:
             self.pressed_keys.remove(key_str)
-            
             timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-            key_combination = self._get_key_combination(key)
-            self.keys.append({'time': timestamp, 'key': key_combination, 'action': 'release'})
+            self.keys.append({'time': timestamp, 'key': key_str, 'action': 'release'})
             
             if len(self.keys) >= self.keys.maxlen:
                 self.trigger_save()
+        
+        if not self.pressed_keys:
+            self.last_hotkey = None
 
     def _key_to_string(self, key):
         if isinstance(key, int):
@@ -181,12 +204,19 @@ class KeyLogger:
             }
             return special_keys.get(vk, f'Key.{hex(vk)}')
 
-    def _get_key_combination(self, new_key):
-        # 转换所有按下的键和新键
-        all_keys = [self._key_to_string(k) for k in self.pressed_keys] + [self._key_to_string(new_key)]
+    def _get_key_combination(self):
+        # 只使用当前按下的键
+        all_keys = [self._key_to_string(k) for k in self.pressed_keys]
         # 去重并排序
         unique_keys = sorted(set(all_keys))
         return '+'.join(unique_keys)
+    
+    def _check_hotkey(self):
+        current_keys = frozenset(self.pressed_keys)
+        for hotkey_combo, hotkey_name in self.hotkeys.items():
+            if hotkey_combo.issubset(current_keys):
+                return hotkey_name
+        return None
     
     def get_data(self):
         return list(self.keys)
