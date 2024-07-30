@@ -1,31 +1,36 @@
 from pynput import keyboard
 from collections import deque
 from datetime import datetime
+from simple_log_helper import CustomLogger
+
+logger = CustomLogger(__name__,'key_logs/key_logger.log')
 
 class KeyLogger:
     def __init__(self, config, trigger_save):
         self.config = config
         self.keys = deque(maxlen=self.config.buffer_size)
         self.trigger_save = trigger_save
-        self.pressed_keys = set()  # 用于跟踪所有当前按下的键
+        self.pressed_keys = set()
         self.listener = None
         self.hotkeys = {
-            frozenset(['<ctrl>', 'c']): 'Ctrl+C',
-            frozenset(['<ctrl>', 'v']): 'Ctrl+V',
-            frozenset(['<alt>', '<f4>']): 'Alt+F4',
-            frozenset(['<ctrl>', '<shift>', 'esc']): 'Ctrl+Shift+Esc',
-            frozenset(['<ctrl>', 's']): 'Ctrl+S',
-            frozenset(['<ctrl>', 'a']): 'Ctrl+A',
-            frozenset(['<win>', 'd']): 'Win+D',
-            frozenset(['<win>', 'r']): 'Win+R',
-            frozenset(['<win>', 'e']): 'Win+E',
-            frozenset(['<ctrl>', 'f']): 'Ctrl+F',
-            frozenset(['<ctrl>', 'z']): 'Ctrl+Z',
-            frozenset(['<ctrl>', 'h']): 'Ctrl+H',
-            frozenset(['<ctrl>', 'x']): 'Ctrl+X',
-            frozenset(['<alt>', 'tab']): 'Alt+Tab'
+            frozenset(['Key.ctrl_l', 'C']): 'Ctrl+C',
+            frozenset(['Key.ctrl_l', 'V']): 'Ctrl+V',
+            frozenset(['Key.alt_l', 'Key.f4']): 'Alt+F4',
+            frozenset(['Key.ctrl_l', 'Key.shift', 'Key.esc']): 'Ctrl+Shift+Esc',
+            frozenset(['Key.ctrl_l', 'S']): 'Ctrl+S',
+            frozenset(['Key.ctrl_l', 'A']): 'Ctrl+A',
+            frozenset(['Key.cmd', 'D']): 'Win+D',
+            frozenset(['Key.cmd', 'R']): 'Win+R',
+            frozenset(['Key.cmd', 'E']): 'Win+E',
+            frozenset(['Key.ctrl_l', 'F']): 'Ctrl+F',
+            frozenset(['Key.ctrl_l', 'Z']): 'Ctrl+Z',
+            frozenset(['Key.ctrl_l', 'H']): 'Ctrl+H',
+            frozenset(['Key.ctrl_l', 'X']): 'Ctrl+X',
+            frozenset(['Key.alt_l', 'Key.tab']): 'Alt+Tab',
+            frozenset(['Key.cmd', 'Key.tab']): 'Win+Tab',
+            frozenset(['Key.insert','Key.shift']): 'Insert+Shift',
+            frozenset(['key.insert','Key.ctrl_l']): 'Insert+Ctrl',
         }
-        self.last_hotkey = None
 
     def start_logging(self):
         self.listener = keyboard.Listener(
@@ -43,16 +48,11 @@ class KeyLogger:
         
         if key_str not in self.pressed_keys:
             self.pressed_keys.add(key_str)
-            
-            # 检查是否触发了热键
             hotkey = self._check_hotkey()
             if hotkey:
-                if hotkey != self.last_hotkey:
-                    self.keys.append({'time': timestamp, 'key': hotkey, 'action': 'hotkey'})
-                    self.last_hotkey = hotkey
+                self.keys.append({'time': timestamp, 'key': hotkey, 'action': 'hotkey'})
             else:
                 self.keys.append({'time': timestamp, 'key': key_str, 'action': 'press'})
-                self.last_hotkey = None
             
             if len(self.keys) >= self.keys.maxlen:
                 self.trigger_save()
@@ -66,9 +66,6 @@ class KeyLogger:
             
             if len(self.keys) >= self.keys.maxlen:
                 self.trigger_save()
-        
-        if not self.pressed_keys:
-            self.last_hotkey = None
 
     def _key_to_string(self, key):
         if isinstance(key, int):
@@ -213,6 +210,12 @@ class KeyLogger:
     
     def _check_hotkey(self):
         current_keys = frozenset(self.pressed_keys)
+        if len(current_keys) < 2:
+            return
+        if len(current_keys) > 1 and current_keys not in self.hotkeys:
+            logger.info(f'Hotkey not found: {current_keys}')
+            return
+            
         for hotkey_combo, hotkey_name in self.hotkeys.items():
             if hotkey_combo.issubset(current_keys):
                 return hotkey_name
