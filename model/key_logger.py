@@ -3,11 +3,12 @@ from collections import deque
 from datetime import datetime
 from simple_log_helper import CustomLogger
 
-logger = CustomLogger(__name__,'key_logs/key_logger.log')
+
 
 class KeyLogger:
     def __init__(self, config, trigger_save):
         self.config = config
+        self.logger = CustomLogger(__name__,log_filename=f'{self.config.csv_folder}/key_logger.log')
         self.keys = deque(maxlen=self.config.buffer_size)
         self.trigger_save = trigger_save
         self.pressed_keys = set()
@@ -30,6 +31,7 @@ class KeyLogger:
             frozenset(['Key.cmd', 'Key.tab']): 'Win+Tab',
             frozenset(['Key.insert','Key.shift']): 'Insert+Shift',
             frozenset(['key.insert','Key.ctrl_l']): 'Insert+Ctrl',
+            frozenset(['Key.enter','Key.shift']): 'Enter+Shift',
         }
 
     def start_logging(self):
@@ -213,8 +215,12 @@ class KeyLogger:
         if len(current_keys) < 2:
             return
         if len(current_keys) > 1 and current_keys not in self.hotkeys:
-            logger.info(f'Hotkey not found: {current_keys}')
-            return
+            #check if not only contain a~z or 0~9
+            for key in current_keys:
+                if key in ['Key.shift', 'Key.ctrl_l', 'Key.alt_l', 'Key.cmd']:
+                    self.logger.info(f'Hotkey not found: {current_keys}')
+                    break
+            return None
             
         for hotkey_combo, hotkey_name in self.hotkeys.items():
             if hotkey_combo.issubset(current_keys):
