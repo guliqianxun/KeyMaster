@@ -1,14 +1,36 @@
 from pynput import keyboard
 from collections import deque
 from datetime import datetime
+from simple_log_helper import CustomLogger
+
+logger = CustomLogger(__name__,'key_logs/key_logger.log')
 
 class KeyLogger:
     def __init__(self, config, trigger_save):
         self.config = config
         self.keys = deque(maxlen=self.config.buffer_size)
         self.trigger_save = trigger_save
-        self.pressed_keys = set()  # 用于跟踪所有当前按下的键
+        self.pressed_keys = set()
         self.listener = None
+        self.hotkeys = {
+            frozenset(['Key.ctrl_l', 'C']): 'Ctrl+C',
+            frozenset(['Key.ctrl_l', 'V']): 'Ctrl+V',
+            frozenset(['Key.alt_l', 'Key.f4']): 'Alt+F4',
+            frozenset(['Key.ctrl_l', 'Key.shift', 'Key.esc']): 'Ctrl+Shift+Esc',
+            frozenset(['Key.ctrl_l', 'S']): 'Ctrl+S',
+            frozenset(['Key.ctrl_l', 'A']): 'Ctrl+A',
+            frozenset(['Key.cmd', 'D']): 'Win+D',
+            frozenset(['Key.cmd', 'R']): 'Win+R',
+            frozenset(['Key.cmd', 'E']): 'Win+E',
+            frozenset(['Key.ctrl_l', 'F']): 'Ctrl+F',
+            frozenset(['Key.ctrl_l', 'Z']): 'Ctrl+Z',
+            frozenset(['Key.ctrl_l', 'H']): 'Ctrl+H',
+            frozenset(['Key.ctrl_l', 'X']): 'Ctrl+X',
+            frozenset(['Key.alt_l', 'Key.tab']): 'Alt+Tab',
+            frozenset(['Key.cmd', 'Key.tab']): 'Win+Tab',
+            frozenset(['Key.insert','Key.shift']): 'Insert+Shift',
+            frozenset(['key.insert','Key.ctrl_l']): 'Insert+Ctrl',
+        }
 
     def start_logging(self):
         self.listener = keyboard.Listener(
@@ -21,28 +43,26 @@ class KeyLogger:
             self.listener.stop()
 
     def _on_press(self, key):
-        # 检查这个键是否已经被按下
         key_str = self._key_to_string(key)
-        if key_str in self.pressed_keys:
-            return  # 如果已经按下，不进行重复记录
+        timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         
-        self.pressed_keys.add(key_str)
-        
-        # timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        # key_combination = self._get_key_combination(key)
-        # self.keys.append({'time': timestamp, 'key': key_combination, 'action': 'press'})
-        
-        # if len(self.keys) >= self.keys.maxlen:
-        #     self.trigger_save()
+        if key_str not in self.pressed_keys:
+            self.pressed_keys.add(key_str)
+            hotkey = self._check_hotkey()
+            if hotkey:
+                self.keys.append({'time': timestamp, 'key': hotkey, 'action': 'hotkey'})
+            else:
+                self.keys.append({'time': timestamp, 'key': key_str, 'action': 'press'})
+            
+            if len(self.keys) >= self.keys.maxlen:
+                self.trigger_save()
 
     def _on_release(self, key):
         key_str = self._key_to_string(key)
         if key_str in self.pressed_keys:
             self.pressed_keys.remove(key_str)
-            
             timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-            key_combination = self._get_key_combination(key)
-            self.keys.append({'time': timestamp, 'key': key_combination, 'action': 'release'})
+            self.keys.append({'time': timestamp, 'key': key_str, 'action': 'release'})
             
             if len(self.keys) >= self.keys.maxlen:
                 self.trigger_save()
@@ -181,12 +201,25 @@ class KeyLogger:
             }
             return special_keys.get(vk, f'Key.{hex(vk)}')
 
-    def _get_key_combination(self, new_key):
-        # 转换所有按下的键和新键
-        all_keys = [self._key_to_string(k) for k in self.pressed_keys] + [self._key_to_string(new_key)]
+    def _get_key_combination(self):
+        # 只使用当前按下的键
+        all_keys = [self._key_to_string(k) for k in self.pressed_keys]
         # 去重并排序
         unique_keys = sorted(set(all_keys))
         return '+'.join(unique_keys)
+    
+    def _check_hotkey(self):
+        current_keys = frozenset(self.pressed_keys)
+        if len(current_keys) < 2:
+            return
+        if len(current_keys) > 1 and current_keys not in self.hotkeys:
+            logger.info(f'Hotkey not found: {current_keys}')
+            return
+            
+        for hotkey_combo, hotkey_name in self.hotkeys.items():
+            if hotkey_combo.issubset(current_keys):
+                return hotkey_name
+        return None
     
     def get_data(self):
         return list(self.keys)

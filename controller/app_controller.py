@@ -60,7 +60,7 @@ class AppController:
         # 显示正在关闭的消息
         if self.main_window:
             self.main_window.update_status("正在保存数据，请稍候...")
-            self.main_window.update()  # 强制更新UI
+            self.main_window.update()
         
         # 等待清理完成
         closing_thread.join(timeout=5)  # 最多等待5秒
@@ -90,12 +90,3 @@ class AppController:
         stats = self.stats_analyzer.analyze_data(data)
         self.stats_view.update_charts(stats)
         self.stats_view.deiconify()
-
-    # def stop_logging(self):
-    #     self.running = False
-    #     self.key_logger.stop_logging()
-    #     self.save_data()  # 保存最后的数据
-    #     if self.auto_save_thread:
-    #         self.auto_save_thread.join()
-    #     if self.stats_view and self.stats_view.winfo_exists():
-    #         self.stats_view.destroy()
