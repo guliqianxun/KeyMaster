@@ -212,7 +212,7 @@ class KeyLogger:
     
     def _check_hotkey(self):
         current_keys = frozenset(self.pressed_keys)
-        if len(current_keys) < 2:
+        if len(current_keys) < 1:
             return
         if len(current_keys) > 1 and current_keys not in self.hotkeys:
             #check if not only contain a~z or 0~9

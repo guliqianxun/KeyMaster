@@ -2,7 +2,7 @@ import os
 
 class Config:
     def __init__(self):
-        self.title = "KeyMaster v0.3"
+        self.title = "KeyMaster v0.31"
         self.csv_folder = "key_logs"
         self.buffer_size = 50
         self.save_interval = 60
