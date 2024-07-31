@@ -7,6 +7,7 @@ class StatsAnalyzer:
             return {}
 
         key_counts = Counter()
+        key_release_counts = Counter()
         hourly_counts = {i: 0 for i in range(24)}
         
         start_time = datetime.strptime(str(data[0]['time']), "%Y-%m-%d %H:%M:%S")
@@ -22,14 +23,17 @@ class StatsAnalyzer:
                     key_counts[key] += 1
                 else:
                     key_counts[key] += 1
-                
+            if action == 'release':
+                key_release_counts[key] += 1
                 hourly_counts[time.hour] += 1
 
         total_duration = end_time - start_time
         total_keystrokes = sum(key_counts.values())
+        print(dict(key_release_counts))
 
         return {
             'key_counts': dict(key_counts),
+            'key_release_counts': dict(key_release_counts),
             'hourly_counts': hourly_counts,
             'total_duration': total_duration,
             'total_keystrokes': total_keystrokes,

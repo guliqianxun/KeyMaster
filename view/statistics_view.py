@@ -3,13 +3,13 @@ from tkinter import ttk
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import matplotlib.pyplot as plt
-import unicodedata
+import numpy as np
 
 class StatisticsView(tk.Toplevel):
     def __init__(self, master, controller):
         super().__init__(master)
         self.controller = controller
-        self.title("KeyMaster Statistics")
+        self.title(f"{self.controller.config.title} Statistics")
         self.geometry("800x600")
         
         self.protocol("WM_DELETE_WINDOW", self.on_closing)
@@ -24,17 +24,26 @@ class StatisticsView(tk.Toplevel):
         self.notebook = ttk.Notebook(self)
         self.notebook.pack(expand=True, fill='both')
 
+        self.heatmap_frame = ttk.Frame(self.notebook)
         self.key_freq_frame = ttk.Frame(self.notebook)
         self.hourly_dist_frame = ttk.Frame(self.notebook)
         self.summary_frame = ttk.Frame(self.notebook)
 
+        self.notebook.add(self.heatmap_frame, text='Keyboard Heatmap')
         self.notebook.add(self.key_freq_frame, text='Key Frequency')
         self.notebook.add(self.hourly_dist_frame, text='Hourly Distribution')
         self.notebook.add(self.summary_frame, text='Summary')
 
+        self.create_keyboard_heatmap()
         self.create_key_freq_chart()
         self.create_hourly_dist_chart()
         self.create_summary()
+
+    def create_keyboard_heatmap(self):
+        self.heatmap_figure = Figure(figsize=(10, 4), dpi=100)
+        self.heatmap_plot = self.heatmap_figure.add_subplot(111)
+        self.heatmap_canvas = FigureCanvasTkAgg(self.heatmap_figure, self.heatmap_frame)
+        self.heatmap_canvas.get_tk_widget().pack(side=tk.TOP, fill=tk.BOTH, expand=1)
 
     def create_key_freq_chart(self):
         self.key_freq_figure = Figure(figsize=(8, 5), dpi=100)
@@ -55,9 +64,59 @@ class StatisticsView(tk.Toplevel):
     def update_charts(self, stats):
         if not self.winfo_exists():
             return
+        self.update_keyboard_heatmap(stats['key_release_counts'])
         self.update_key_freq_chart(stats['key_counts'])
         self.update_hourly_dist_chart(stats['hourly_counts'])
         self.update_summary(stats)
+    
+    def update_keyboard_heatmap(self, key_counts):
+        self.heatmap_plot.clear()
+        
+        # Define the updated keyboard layout
+        keyboard_layout = [
+            ['`', '1', '2', '3', '4', '5', '6', '7', '8', '9', '0', '-', '=', 'Backspace'],
+            ['Tab', 'Q', 'W', 'E', 'R', 'T', 'Y', 'U', 'I', 'O', 'P', '[', ']', '\\'],
+            ['Caps', 'A', 'S', 'D', 'F', 'G', 'H', 'J', 'K', 'L', ';', "'", 'Enter', ''],
+            ['LShift', '', 'Z', 'X', 'C', 'V', 'B', 'N', 'M', ',', '.', '/', 'RShift', ''],
+            ['LCtrl', 'LWin', 'LAlt', '', '', '', 'Space', '', '', '', 'RAlt', 'RWin', 'Menu', 'RCtrl']
+        ]
+
+        # Create heatmap data
+        heatmap_data = []
+        for row in keyboard_layout:
+            heatmap_row = []
+            for key in row:
+                if key:
+                    count = 0
+                    if key in ['LShift', 'RShift']:
+                        count = (key_counts.get('shift_l', 0) + key_counts.get('shift_r', 0)) // 2
+                    elif key in ['LCtrl', 'RCtrl']:
+                        count = (key_counts.get('ctrl_l', 0) + key_counts.get('ctrl_r', 0)) // 2
+                    elif key in ['LAlt', 'RAlt']:
+                        count = (key_counts.get('alt_l', 0) + key_counts.get('alt_r', 0)) // 2
+                    elif key in ['LWin', 'RWin']:
+                        count = (key_counts.get('cmd', 0) + key_counts.get('cmd_r', 0)) // 2
+                    else:
+                        count = key_counts.get(key, 0)
+                else:
+                    count = 0
+                heatmap_row.append(count)
+            heatmap_data.append(heatmap_row)
+
+        # Draw the heatmap
+        im = self.heatmap_plot.imshow(heatmap_data, cmap='YlOrRd')
+        self.heatmap_figure.colorbar(im)
+
+        # Add keyboard labels
+        for i, row in enumerate(keyboard_layout):
+            for j, key in enumerate(row):
+                if key:
+                    self.heatmap_plot.text(j, i, key, ha='center', va='center', fontsize=8)
+
+        self.heatmap_plot.set_title("Keyboard Heatmap")
+        self.heatmap_plot.axis('off')
+        self.heatmap_figure.tight_layout()
+        self.heatmap_canvas.draw()
 
     def update_key_freq_chart(self, key_counts):
         self.key_freq_plot.clear()
