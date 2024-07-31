@@ -14,24 +14,24 @@ class KeyLogger:
         self.pressed_keys = set()
         self.listener = None
         self.hotkeys = {
-            frozenset(['Key.ctrl_l', 'C']): 'Ctrl+C',
-            frozenset(['Key.ctrl_l', 'V']): 'Ctrl+V',
-            frozenset(['Key.alt_l', 'Key.f4']): 'Alt+F4',
-            frozenset(['Key.ctrl_l', 'Key.shift', 'Key.esc']): 'Ctrl+Shift+Esc',
-            frozenset(['Key.ctrl_l', 'S']): 'Ctrl+S',
-            frozenset(['Key.ctrl_l', 'A']): 'Ctrl+A',
-            frozenset(['Key.cmd', 'D']): 'Win+D',
-            frozenset(['Key.cmd', 'R']): 'Win+R',
-            frozenset(['Key.cmd', 'E']): 'Win+E',
-            frozenset(['Key.ctrl_l', 'F']): 'Ctrl+F',
-            frozenset(['Key.ctrl_l', 'Z']): 'Ctrl+Z',
-            frozenset(['Key.ctrl_l', 'H']): 'Ctrl+H',
-            frozenset(['Key.ctrl_l', 'X']): 'Ctrl+X',
-            frozenset(['Key.alt_l', 'Key.tab']): 'Alt+Tab',
-            frozenset(['Key.cmd', 'Key.tab']): 'Win+Tab',
-            frozenset(['Key.insert','Key.shift']): 'Insert+Shift',
-            frozenset(['key.insert','Key.ctrl_l']): 'Insert+Ctrl',
-            frozenset(['Key.enter','Key.shift']): 'Enter+Shift',
+            frozenset(['ctrl_l', 'C']): 'Ctrl+C',
+            frozenset(['ctrl_l', 'V']): 'Ctrl+V',
+            frozenset(['alt_l', 'f4']): 'Alt+F4',
+            frozenset(['ctrl_l', 'shift', 'esc']): 'Ctrl+Shift+Esc',
+            frozenset(['ctrl_l', 'S']): 'Ctrl+S',
+            frozenset(['ctrl_l', 'A']): 'Ctrl+A',
+            frozenset(['cmd', 'D']): 'Win+D',
+            frozenset(['cmd', 'R']): 'Win+R',
+            frozenset(['cmd', 'E']): 'Win+E',
+            frozenset(['ctrl_l', 'F']): 'Ctrl+F',
+            frozenset(['ctrl_l', 'Z']): 'Ctrl+Z',
+            frozenset(['ctrl_l', 'H']): 'Ctrl+H',
+            frozenset(['ctrl_l', 'X']): 'Ctrl+X',
+            frozenset(['alt_l', 'tab']): 'Alt+Tab',
+            frozenset(['cmd', 'tab']): 'Win+Tab',
+            frozenset(['insert','shift']): 'Insert+Shift',
+            frozenset(['insert','ctrl_l']): 'Insert+Ctrl',
+            frozenset(['enter','shift']): 'Enter+Shift',
         }
 
     def start_logging(self):
@@ -46,6 +46,7 @@ class KeyLogger:
 
     def _on_press(self, key):
         key_str = self._key_to_string(key)
+        key_str = key_str.replace("Key.", "")
         timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         
         if key_str not in self.pressed_keys:
@@ -61,21 +62,23 @@ class KeyLogger:
 
     def _on_release(self, key):
         key_str = self._key_to_string(key)
+        key_str = key_str.replace("Key.", "")
         if key_str in self.pressed_keys:
             self.pressed_keys.remove(key_str)
-            timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-            self.keys.append({'time': timestamp, 'key': key_str, 'action': 'release'})
-            
-            if len(self.keys) >= self.keys.maxlen:
-                self.trigger_save()
+        timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        self.keys.append({'time': timestamp, 'key': key_str, 'action': 'release'})
+        
+        if len(self.keys) >= self.keys.maxlen:
+            self.trigger_save()
 
     def _key_to_string(self, key):
         if isinstance(key, int):
-            # 直接处理整数键码
-            return self._vk_to_string(key)
+            str_key = self._vk_to_string(key)
+            return str_key
         elif hasattr(key, 'vk'):
             # 处理带有 vk 属性的对象
-            return self._vk_to_string(key.vk)
+            str_key = self._vk_to_string(key.vk)
+            return str_key
         elif isinstance(key, str):
             # 处理普通字符串
             return key
@@ -201,14 +204,14 @@ class KeyLogger:
                 0xDD: ']',
                 0xDE: "'",
             }
-            return special_keys.get(vk, f'Key.{hex(vk)}')
+            return special_keys.get(vk, f'{hex(vk)}')
 
-    def _get_key_combination(self):
-        # 只使用当前按下的键
-        all_keys = [self._key_to_string(k) for k in self.pressed_keys]
-        # 去重并排序
-        unique_keys = sorted(set(all_keys))
-        return '+'.join(unique_keys)
+    # def _get_key_combination(self):
+    #     # 只使用当前按下的键
+    #     all_keys = [self._key_to_string(k) for k in self.pressed_keys]
+    #     # 去重并排序
+    #     unique_keys = sorted(set(all_keys))
+    #     return '+'.join(unique_keys)
     
     def _check_hotkey(self):
         current_keys = frozenset(self.pressed_keys)
@@ -217,7 +220,7 @@ class KeyLogger:
         if len(current_keys) > 1 and current_keys not in self.hotkeys:
             #check if not only contain a~z or 0~9
             for key in current_keys:
-                if key in ['Key.shift', 'Key.ctrl_l', 'Key.alt_l', 'Key.cmd']:
+                if key in ['shift', 'ctrl_l', 'alt_l', 'cmd']:
                     self.logger.info(f'Hotkey not found: {current_keys}')
                     break
             return None

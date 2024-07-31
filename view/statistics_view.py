@@ -64,7 +64,7 @@ class StatisticsView(tk.Toplevel):
     def update_charts(self, stats):
         if not self.winfo_exists():
             return
-        self.update_keyboard_heatmap(stats['key_counts'])
+        self.update_keyboard_heatmap(stats['key_release_counts'])
         self.update_key_freq_chart(stats['key_counts'])
         self.update_hourly_dist_chart(stats['hourly_counts'])
         self.update_summary(stats)
@@ -72,31 +72,46 @@ class StatisticsView(tk.Toplevel):
     def update_keyboard_heatmap(self, key_counts):
         self.heatmap_plot.clear()
         
-        # 定义键盘布局
+        # Define the updated keyboard layout
         keyboard_layout = [
             ['`', '1', '2', '3', '4', '5', '6', '7', '8', '9', '0', '-', '=', 'Backspace'],
             ['Tab', 'Q', 'W', 'E', 'R', 'T', 'Y', 'U', 'I', 'O', 'P', '[', ']', '\\'],
             ['Caps', 'A', 'S', 'D', 'F', 'G', 'H', 'J', 'K', 'L', ';', "'", 'Enter', ''],
-            ['Shift','', 'Z', 'X', 'C', 'V', 'B', 'N', 'M', ',', '.', '/', 'Shift',  ''],
-            ['Ctrl', 'Win', 'Alt', '','','', 'Space', '','','','Alt', 'Win', 'Menu', 'Ctrl']
+            ['LShift', '', 'Z', 'X', 'C', 'V', 'B', 'N', 'M', ',', '.', '/', 'RShift', ''],
+            ['LCtrl', 'LWin', 'LAlt', '', '', '', 'Space', '', '', '', 'RAlt', 'RWin', 'Menu', 'RCtrl']
         ]
-        # 创建热力图数据
+
+        # Create heatmap data
         heatmap_data = []
         for row in keyboard_layout:
             heatmap_row = []
             for key in row:
-                count = key_counts.get(key.lower(), 0)
+                if key:
+                    count = 0
+                    if key in ['LShift', 'RShift']:
+                        count = (key_counts.get('shift_l', 0) + key_counts.get('shift_r', 0)) // 2
+                    elif key in ['LCtrl', 'RCtrl']:
+                        count = (key_counts.get('ctrl_l', 0) + key_counts.get('ctrl_r', 0)) // 2
+                    elif key in ['LAlt', 'RAlt']:
+                        count = (key_counts.get('alt_l', 0) + key_counts.get('alt_r', 0)) // 2
+                    elif key in ['LWin', 'RWin']:
+                        count = (key_counts.get('cmd', 0) + key_counts.get('cmd_r', 0)) // 2
+                    else:
+                        count = key_counts.get(key, 0)
+                else:
+                    count = 0
                 heatmap_row.append(count)
             heatmap_data.append(heatmap_row)
 
-        # 绘制热力图
+        # Draw the heatmap
         im = self.heatmap_plot.imshow(heatmap_data, cmap='YlOrRd')
         self.heatmap_figure.colorbar(im)
 
-        # 添加键盘标签
+        # Add keyboard labels
         for i, row in enumerate(keyboard_layout):
             for j, key in enumerate(row):
-                self.heatmap_plot.text(j, i, key, ha='center', va='center')
+                if key:
+                    self.heatmap_plot.text(j, i, key, ha='center', va='center', fontsize=8)
 
         self.heatmap_plot.set_title("Keyboard Heatmap")
         self.heatmap_plot.axis('off')
