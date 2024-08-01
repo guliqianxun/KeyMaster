@@ -72,46 +72,83 @@ class StatisticsView(tk.Toplevel):
     def update_keyboard_heatmap(self, key_counts):
         self.heatmap_plot.clear()
         
-        # Define the updated keyboard layout
-        keyboard_layout = [
-            ['`', '1', '2', '3', '4', '5', '6', '7', '8', '9', '0', '-', '=', 'Backspace'],
-            ['Tab', 'Q', 'W', 'E', 'R', 'T', 'Y', 'U', 'I', 'O', 'P', '[', ']', '\\'],
-            ['Caps', 'A', 'S', 'D', 'F', 'G', 'H', 'J', 'K', 'L', ';', "'", 'Enter', ''],
-            ['LShift', '', 'Z', 'X', 'C', 'V', 'B', 'N', 'M', ',', '.', '/', 'RShift', ''],
-            ['LCtrl', 'LWin', 'LAlt', '', '', '', 'Space', '', '', '', 'RAlt', 'RWin', 'Menu', 'RCtrl']
-        ]
+        # Define the keyboard layout with precise positions and sizes
+        keyboard_layout = {
+            # Function keys row
+            'Esc': (0, 0, 1, 1), 'F1': (0, 2, 1, 1), 'F2': (0, 3, 1, 1), 'F3': (0, 4, 1, 1), 'F4': (0, 5, 1, 1),
+            'F5': (0, 6.5, 1, 1), 'F6': (0, 7.5, 1, 1), 'F7': (0, 8.5, 1, 1), 'F8': (0, 9.5, 1, 1),
+            'F9': (0, 11, 1, 1), 'F10': (0, 12, 1, 1), 'F11': (0, 13, 1, 1), 'F12': (0, 14, 1, 1),
+            'PrtSc': (0, 15.25, 1, 1), 'ScrLk': (0, 16.25, 1, 1), 'Pause': (0, 17.25, 1, 1),
 
-        # Create heatmap data
-        heatmap_data = []
-        for row in keyboard_layout:
-            heatmap_row = []
-            for key in row:
-                if key:
-                    count = 0
-                    if key in ['LShift', 'RShift']:
-                        count = (key_counts.get('shift_l', 0) + key_counts.get('shift_r', 0)) // 2
-                    elif key in ['LCtrl', 'RCtrl']:
-                        count = (key_counts.get('ctrl_l', 0) + key_counts.get('ctrl_r', 0)) // 2
-                    elif key in ['LAlt', 'RAlt']:
-                        count = (key_counts.get('alt_l', 0) + key_counts.get('alt_r', 0)) // 2
-                    elif key in ['LWin', 'RWin']:
-                        count = (key_counts.get('cmd', 0) + key_counts.get('cmd_r', 0)) // 2
-                    else:
-                        count = key_counts.get(key, 0)
-                else:
-                    count = 0
-                heatmap_row.append(count)
-            heatmap_data.append(heatmap_row)
+            # Number row
+            '`': (1, 0, 1, 1), '1': (1, 1, 1, 1), '2': (1, 2, 1, 1), '3': (1, 3, 1, 1), '4': (1, 4, 1, 1),
+            '5': (1, 5, 1, 1), '6': (1, 6, 1, 1), '7': (1, 7, 1, 1), '8': (1, 8, 1, 1), '9': (1, 9, 1, 1),
+            '0': (1, 10, 1, 1), '-': (1, 11, 1, 1), '=': (1, 12, 1, 1), 'Backspace': (1, 13, 2, 1),
 
-        # Draw the heatmap
-        im = self.heatmap_plot.imshow(heatmap_data, cmap='YlOrRd')
+            # QWERTY row
+            'Tab': (2, 0, 1.5, 1), 'Q': (2, 1.5, 1, 1), 'W': (2, 2.5, 1, 1), 'E': (2, 3.5, 1, 1), 'R': (2, 4.5, 1, 1),
+            'T': (2, 5.5, 1, 1), 'Y': (2, 6.5, 1, 1), 'U': (2, 7.5, 1, 1), 'I': (2, 8.5, 1, 1), 'O': (2, 9.5, 1, 1),
+            'P': (2, 10.5, 1, 1), '[': (2, 11.5, 1, 1), ']': (2, 12.5, 1, 1), '\\': (2, 13.5, 1.5, 1),
+
+            # Home row
+            'Caps': (3, 0, 1.75, 1), 'A': (3, 1.75, 1, 1), 'S': (3, 2.75, 1, 1), 'D': (3, 3.75, 1, 1), 'F': (3, 4.75, 1, 1),
+            'G': (3, 5.75, 1, 1), 'H': (3, 6.75, 1, 1), 'J': (3, 7.75, 1, 1), 'K': (3, 8.75, 1, 1), 'L': (3, 9.75, 1, 1),
+            ';': (3, 10.75, 1, 1), "'": (3, 11.75, 1, 1), 'Enter': (3, 12.75, 2.25, 1),
+
+            # Shift row
+            'LShift': (4, 0, 2.25, 1), 'Z': (4, 2.25, 1, 1), 'X': (4, 3.25, 1, 1), 'C': (4, 4.25, 1, 1), 'V': (4, 5.25, 1, 1),
+            'B': (4, 6.25, 1, 1), 'N': (4, 7.25, 1, 1), 'M': (4, 8.25, 1, 1), ',': (4, 9.25, 1, 1), '.': (4, 10.25, 1, 1),
+            '/': (4, 11.25, 1, 1), 'RShift': (4, 12.25, 2.75, 1),
+
+            # Bottom row
+            'LCtrl': (5, 0, 1.25, 1), 'LWin': (5, 1.25, 1.25, 1), 'LAlt': (5, 2.5, 1.25, 1), 'Space': (5, 3.75, 6.25, 1),
+            'RAlt': (5, 10, 1.25, 1), 'RWin': (5, 11.25, 1.25, 1), 'Menu': (5, 12.5, 1.25, 1), 'RCtrl': (5, 13.75, 1.25, 1),
+
+            # Arrow keys
+            'Up': (4, 16.25, 1, 1), 'Left': (5, 15.25, 1, 1), 'Down': (5, 16.25, 1, 1), 'Right': (5, 17.25, 1, 1),
+
+            # Numpad
+            'Num7': (2, 15.5, 1, 1), 'Num8': (2, 16.5, 1, 1), 'Num9': (2, 17.5, 1, 1),
+            'Num4': (3, 15.5, 1, 1), 'Num5': (3, 16.5, 1, 1), 'Num6': (3, 17.5, 1, 1),
+            'Num1': (4, 15.5, 1, 1), 'Num2': (4, 16.5, 1, 1), 'Num3': (4, 17.5, 1, 1),
+            'Num0': (5, 15.5, 2, 1), 'NumDot': (5, 17.5, 1, 1),
+        }
+        # Define special key mappings
+        special_keys = {
+            'LShift': ['shift_l'],
+            'RShift': ['shift_l'],
+            'LCtrl': ['ctrl_l'],
+            'RCtrl': [ 'ctrl_r'],
+            'LAlt': ['alt_l'],
+            'RAlt': ['alt_r'],
+            'LWin': ['cmd'],
+            'RWin': ['cmd_r']
+        }
+        # 创建高分辨率网格用于热图
+        grid_size = 50
+        heatmap_data = np.zeros((6*grid_size, 19*grid_size))
+
+        # 填充热图数据
+        for key, (row, col, width, height) in keyboard_layout.items():
+            if key in special_keys:
+                # 处理特殊键
+                count = sum(key_counts.get(special_key, 0) for special_key in special_keys[key])
+            else:
+                # 常规键处理
+                count = key_counts.get(key.lower(), 0)
+            
+            r_start, r_end = int(row*grid_size), int((row+height)*grid_size)
+            c_start, c_end = int(col*grid_size), int((col+width)*grid_size)
+            heatmap_data[r_start:r_end, c_start:c_end] = count
+
+        # 绘制热图
+        im = self.heatmap_plot.imshow(heatmap_data, cmap='YlOrRd', aspect='auto')
         self.heatmap_figure.colorbar(im)
 
-        # Add keyboard labels
-        for i, row in enumerate(keyboard_layout):
-            for j, key in enumerate(row):
-                if key:
-                    self.heatmap_plot.text(j, i, key, ha='center', va='center', fontsize=8)
+        # 添加键盘标签
+        for key, (row, col, width, height) in keyboard_layout.items():
+            self.heatmap_plot.text(col*grid_size + width*grid_size/2, row*grid_size + height*grid_size/2, 
+                                key, ha='center', va='center', fontsize=6)
 
         self.heatmap_plot.set_title("Keyboard Heatmap")
         self.heatmap_plot.axis('off')

@@ -32,6 +32,12 @@ class KeyLogger:
             frozenset(['insert','shift']): 'Insert+Shift',
             frozenset(['insert','ctrl_l']): 'Insert+Ctrl',
             frozenset(['enter','shift']): 'Enter+Shift',
+            frozenset(['enter','ctrl_l']): 'Enter+Ctrl',
+            frozenset(['ctrl_l','/']): 'Ctrl+/',
+            frozenset(['ctrl_l','shift','/']): 'Ctrl+Shift+/',
+            frozenset(['ctrl_l','shift','N']): 'Ctrl+Shift+N',
+            frozenset(['ctrl_l','G']): 'Ctrl+G',
+            frozenset(['tab','shift']): 'Tab+Shift',
         }
 
     def start_logging(self):
