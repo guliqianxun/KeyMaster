@@ -1,6 +1,6 @@
 import pystray
 import threading
-from PIL import Image, ImageDraw
+from PIL import Image
 
 class BackgroundController:
     def __init__(self, app_controller):
@@ -50,7 +50,7 @@ class BackgroundController:
         )
         self.tray_icon = pystray.Icon(f"{self.config.title}", image, f"{self.config.title}", menu)
         self.tray_icon.on_click = self.on_tray_click
-        self.tray_icon.run_detached()
+        threading.Thread(target=self.tray_icon.run, daemon=True).start() 
 
     def on_tray_click(self, icon, button):
         if button == pystray.MouseButton.LEFT:

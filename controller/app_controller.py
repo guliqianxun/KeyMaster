@@ -16,14 +16,16 @@ class AppController:
         self.stats_analyzer = StatsAnalyzer()
         self.main_window = None
         self.stats_view = None
+        self.running = True
         self.save_event = threading.Event()
         self.background_controller = BackgroundController(self)
 
     def run(self):
         self.background_controller.start()
         threading.Thread(target=self.run_tk_mainloop, daemon=True).start()
-        while self.background_controller.running:
+        while self.running:  # 使用 self.running 而不是 self.background_controller.running
             time.sleep(0.1)
+        self.background_controller.tray_icon.stop() 
 
     def run_tk_mainloop(self):
         if not self.main_window:
@@ -71,27 +73,21 @@ class AppController:
 
     def quit_app(self):
         self.running = False
-        self.key_logger.stop_logging()
+        self.background_controller.stop()
+        self.cleanup()  
         
-        # Close statistics view if it exists
+        # 关闭统计视图
         if self.stats_view and self.stats_view.winfo_exists():
             self.stats_view.destroy()
         
-        # Properly close the main window and stop the application
+        # 关闭主窗口
         if self.main_window:
+            self.main_window.quit()
             self.main_window.destroy()
 
     def cleanup(self):
-        # Save the last bits of data
-        self.save_data()
-        
-        # Wait for the auto-save thread to finish
-        if self.auto_save_thread:
-            self.auto_save_thread.join(timeout=2)
-        
-        # Close the statistics view if it exists
-        if self.stats_view and self.stats_view.winfo_exists():
-            self.stats_view.destroy()
+            self.save_data()  # 保存最后的数据
+            self.key_logger.stop_logging()  
 
     def show_statistics(self):
         if not self.stats_view or not self.stats_view.winfo_exists():
