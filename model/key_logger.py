@@ -3,8 +3,6 @@ from collections import deque
 from datetime import datetime
 from simple_log_helper import CustomLogger
 
-
-
 class KeyLogger:
     def __init__(self, config, trigger_save):
         self.config = config
@@ -51,6 +49,8 @@ class KeyLogger:
             self.listener.stop()
 
     def _on_press(self, key):
+        if key == None:
+            return
         key_str = self._key_to_string(key)
         key_str = key_str.replace("Key.", "")
         timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -67,6 +67,8 @@ class KeyLogger:
                 self.trigger_save()
 
     def _on_release(self, key):
+        if key == None:
+            return
         key_str = self._key_to_string(key)
         key_str = key_str.replace("Key.", "")
         if key_str in self.pressed_keys:
@@ -81,13 +83,11 @@ class KeyLogger:
         if isinstance(key, int):
             str_key = self._vk_to_string(key)
             return str_key
+        elif hasattr(key, 'char') and key.char:
+            return key.char
         elif hasattr(key, 'vk'):
-            # 处理带有 vk 属性的对象
             str_key = self._vk_to_string(key.vk)
             return str_key
-        elif isinstance(key, str):
-            # 处理普通字符串
-            return key
         else:
             # 处理其他类型的键对象
             try:
@@ -211,13 +211,6 @@ class KeyLogger:
                 0xDE: "'",
             }
             return special_keys.get(vk, f'{hex(vk)}')
-
-    # def _get_key_combination(self):
-    #     # 只使用当前按下的键
-    #     all_keys = [self._key_to_string(k) for k in self.pressed_keys]
-    #     # 去重并排序
-    #     unique_keys = sorted(set(all_keys))
-    #     return '+'.join(unique_keys)
     
     def _check_hotkey(self):
         current_keys = frozenset(self.pressed_keys)
