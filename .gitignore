@@ -27,6 +27,7 @@ share/python-wheels/
 MANIFEST
 keys
 kmvenv
+key_logs
 
 # PyInstaller
 #  Usually these files are written by a python script from a template

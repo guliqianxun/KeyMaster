@@ -7,6 +7,7 @@ from view.main_window import MainWindow
 from view.statistics_view import StatisticsView
 from config import Config
 from controller.BackgroundController import BackgroundController
+from PIL import Image, ImageTk
 
 class AppController:
     def __init__(self):
@@ -30,6 +31,9 @@ class AppController:
     def run_tk_mainloop(self):
         if not self.main_window:
             self.main_window = MainWindow(self)
+        icon = Image.open(self.config.icon_path)
+        photo = ImageTk.PhotoImage(icon)
+        self.main_window.iconphoto(False, photo)
         self.main_window.protocol("WM_DELETE_WINDOW", self.hide_window)
         self.main_window.mainloop()\
 

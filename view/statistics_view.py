@@ -4,6 +4,8 @@ from matplotlib.figure import Figure
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import matplotlib.pyplot as plt
 import numpy as np
+from PIL import Image, ImageTk
+import matplotlib.patches as patches
 
 class StatisticsView(tk.Toplevel):
     def __init__(self, master, controller):
@@ -28,19 +30,22 @@ class StatisticsView(tk.Toplevel):
         self.key_freq_frame = ttk.Frame(self.notebook)
         self.hourly_dist_frame = ttk.Frame(self.notebook)
         self.summary_frame = ttk.Frame(self.notebook)
+        self.sponser_frame = ttk.Frame(self.notebook)
 
         self.notebook.add(self.heatmap_frame, text='Keyboard Heatmap')
         self.notebook.add(self.key_freq_frame, text='Key Frequency')
         self.notebook.add(self.hourly_dist_frame, text='Hourly Distribution')
         self.notebook.add(self.summary_frame, text='Summary')
+        self.notebook.add(self.sponser_frame, text='赞助')
 
         self.create_keyboard_heatmap()
         self.create_key_freq_chart()
         self.create_hourly_dist_chart()
         self.create_summary()
+        self.create_sponser()
 
     def create_keyboard_heatmap(self):
-        self.heatmap_figure = Figure(figsize=(10, 4), dpi=100)
+        self.heatmap_figure = Figure(figsize=(15, 6), dpi=100)
         self.heatmap_plot = self.heatmap_figure.add_subplot(111)
         self.heatmap_canvas = FigureCanvasTkAgg(self.heatmap_figure, self.heatmap_frame)
         self.heatmap_canvas.get_tk_widget().pack(side=tk.TOP, fill=tk.BOTH, expand=1)
@@ -60,6 +65,22 @@ class StatisticsView(tk.Toplevel):
     def create_summary(self):
         self.summary_text = tk.Text(self.summary_frame, wrap=tk.WORD, font=("Arial", 12))
         self.summary_text.pack(expand=True, fill='both')
+    def create_sponser(self):
+        sponser_text = """
+            如果你喜欢这个项目，可以通过以下方式支持我：
+            - 给项目点个 star https://github.com/guliqianxun/KeyMaster
+            - 分享给你的朋友
+            - 赞助我一杯咖啡 ☕️
+        """
+        sponser_label = tk.Label(self.sponser_frame, text=sponser_text, font=("Arial", 12), justify=tk.LEFT)
+        sponser_label.pack(expand=True, fill='both')
+        # 添加赞助二维码图片
+        sponser_image = Image.open(self.controller.config.sponser_path)
+        sponser_image = sponser_image.resize((250, 400))
+        sponser_photo = ImageTk.PhotoImage(sponser_image)
+        sponser_label = tk.Label(self.sponser_frame, image=sponser_photo)
+        sponser_label.image = sponser_photo
+        sponser_label.pack(expand=True, fill='both')
 
     def update_charts(self, stats):
         if not self.winfo_exists():
@@ -72,86 +93,71 @@ class StatisticsView(tk.Toplevel):
     def update_keyboard_heatmap(self, key_counts):
         self.heatmap_plot.clear()
         
-        # Define the keyboard layout with precise positions and sizes
-        keyboard_layout = {
-            # Function keys row
-            'Esc': (0, 0, 1, 1), 'F1': (0, 2, 1, 1), 'F2': (0, 3, 1, 1), 'F3': (0, 4, 1, 1), 'F4': (0, 5, 1, 1),
-            'F5': (0, 6.5, 1, 1), 'F6': (0, 7.5, 1, 1), 'F7': (0, 8.5, 1, 1), 'F8': (0, 9.5, 1, 1),
-            'F9': (0, 11, 1, 1), 'F10': (0, 12, 1, 1), 'F11': (0, 13, 1, 1), 'F12': (0, 14, 1, 1),
-            'PrtSc': (0, 15.25, 1, 1), 'ScrLk': (0, 16.25, 1, 1), 'Pause': (0, 17.25, 1, 1),
+        # Define the keyboard layout data
+        keyboard_data = [
+            ["Esc",{"x":1},"F1","F2","F3","F4",{"x":0.5},"F5","F6","F7","F8",{"x":0.5},"F9","F10","F11","F12",{"x":0.25},"PrtSc","ScrLk","Pause"],
+            [{"y":0.5},"~\n`","!\n1","@\n2","#\n3","$\n4","%\n5","^\n6","&\n7","*\n8","(\n9",")\n0","_\n-","+\n=",{"w":2},"Backspace",{"x":0.25},"Insert","Home","PgUp",{"x":0.25},"Num","/","*","-"],
+            [{"w":1.5},"Tab","Q","W","E","R","T","Y","U","I","O","P","{\n[","}\n]",{"w":1.5},"|\n\\",{"x":0.25},"Delete","End","PgDn",{"x":0.25},"7\nHome","8\n↑","9\nPgUp",{"h":2},"+"],
+            [{"w":1.75},"Caps","A","S","D","F","G","H","J","K","L",":\n;","\"\n'",{"w":2.25},"Enter",{"x":3.5},"4\n←","5","6\n→"],
+            [{"w":2.25},"Shift","Z","X","C","V","B","N","M","<\n,",">\n.","?\n/",{"w":2.75},"Shift",{"x":1.25},"↑",{"x":1.25},"1\nEnd","2\n↓","3\nPgDn",{"h":2},"Enter"],
+            [{"w":1.25},"Ctrl",{"w":1.25},"Win",{"w":1.25},"Alt",{"w":6.25},"",{"w":1.25},"Alt",{"w":1.25},"Win",{"w":1.25},"Menu",{"w":1.25},"Ctrl",{"x":0.25},"←","↓","→",{"x":0.25,"w":2},"0\nIns",".\nDel"]
+        ]
 
-            # Number row
-            '`': (1, 0, 1, 1), '1': (1, 1, 1, 1), '2': (1, 2, 1, 1), '3': (1, 3, 1, 1), '4': (1, 4, 1, 1),
-            '5': (1, 5, 1, 1), '6': (1, 6, 1, 1), '7': (1, 7, 1, 1), '8': (1, 8, 1, 1), '9': (1, 9, 1, 1),
-            '0': (1, 10, 1, 1), '-': (1, 11, 1, 1), '=': (1, 12, 1, 1), 'Backspace': (1, 13, 2, 1),
-
-            # QWERTY row
-            'Tab': (2, 0, 1.5, 1), 'Q': (2, 1.5, 1, 1), 'W': (2, 2.5, 1, 1), 'E': (2, 3.5, 1, 1), 'R': (2, 4.5, 1, 1),
-            'T': (2, 5.5, 1, 1), 'Y': (2, 6.5, 1, 1), 'U': (2, 7.5, 1, 1), 'I': (2, 8.5, 1, 1), 'O': (2, 9.5, 1, 1),
-            'P': (2, 10.5, 1, 1), '[': (2, 11.5, 1, 1), ']': (2, 12.5, 1, 1), '\\': (2, 13.5, 1.5, 1),
-
-            # Home row
-            'Caps': (3, 0, 1.75, 1), 'A': (3, 1.75, 1, 1), 'S': (3, 2.75, 1, 1), 'D': (3, 3.75, 1, 1), 'F': (3, 4.75, 1, 1),
-            'G': (3, 5.75, 1, 1), 'H': (3, 6.75, 1, 1), 'J': (3, 7.75, 1, 1), 'K': (3, 8.75, 1, 1), 'L': (3, 9.75, 1, 1),
-            ';': (3, 10.75, 1, 1), "'": (3, 11.75, 1, 1), 'Enter': (3, 12.75, 2.25, 1),
-
-            # Shift row
-            'LShift': (4, 0, 2.25, 1), 'Z': (4, 2.25, 1, 1), 'X': (4, 3.25, 1, 1), 'C': (4, 4.25, 1, 1), 'V': (4, 5.25, 1, 1),
-            'B': (4, 6.25, 1, 1), 'N': (4, 7.25, 1, 1), 'M': (4, 8.25, 1, 1), ',': (4, 9.25, 1, 1), '.': (4, 10.25, 1, 1),
-            '/': (4, 11.25, 1, 1), 'RShift': (4, 12.25, 2.75, 1),
-
-            # Bottom row
-            'LCtrl': (5, 0, 1.25, 1), 'LWin': (5, 1.25, 1.25, 1), 'LAlt': (5, 2.5, 1.25, 1), 'Space': (5, 3.75, 6.25, 1),
-            'RAlt': (5, 10, 1.25, 1), 'RWin': (5, 11.25, 1.25, 1), 'Menu': (5, 12.5, 1.25, 1), 'RCtrl': (5, 13.75, 1.25, 1),
-
-            # Arrow keys
-            'Up': (4, 16.25, 1, 1), 'Left': (5, 15.25, 1, 1), 'Down': (5, 16.25, 1, 1), 'Right': (5, 17.25, 1, 1),
-
-            # Numpad
-            'Num7': (2, 15.5, 1, 1), 'Num8': (2, 16.5, 1, 1), 'Num9': (2, 17.5, 1, 1),
-            'Num4': (3, 15.5, 1, 1), 'Num5': (3, 16.5, 1, 1), 'Num6': (3, 17.5, 1, 1),
-            'Num1': (4, 15.5, 1, 1), 'Num2': (4, 16.5, 1, 1), 'Num3': (4, 17.5, 1, 1),
-            'Num0': (5, 15.5, 2, 1), 'NumDot': (5, 17.5, 1, 1),
-        }
-        # Define special key mappings
-        special_keys = {
-            'LShift': ['shift_l'],
-            'RShift': ['shift_l'],
-            'LCtrl': ['ctrl_l'],
-            'RCtrl': [ 'ctrl_r'],
-            'LAlt': ['alt_l'],
-            'RAlt': ['alt_r'],
-            'LWin': ['cmd'],
-            'RWin': ['cmd_r']
-        }
-        # 创建高分辨率网格用于热图
-        grid_size = 50
-        heatmap_data = np.zeros((6*grid_size, 19*grid_size))
-
-        # 填充热图数据
-        for key, (row, col, width, height) in keyboard_layout.items():
-            if key in special_keys:
-                # 处理特殊键
-                count = sum(key_counts.get(special_key, 0) for special_key in special_keys[key])
+        def draw_key(x, y, width, height, text, count):
+            if key_counts:
+                max_count = max(key_counts.values())
+                min_count = min(value for value in key_counts.values() if value > 0)
+                if count > 0:
+                    log_normalized = (np.log(count) - np.log(min_count)) / (np.log(max_count) - np.log(min_count))
+                else:
+                    log_normalized = 0
+                color = plt.cm.YlOrRd(log_normalized)
             else:
-                # 常规键处理
-                count = key_counts.get(key.lower(), 0)
+                color = plt.cm.YlOrRd(0)
             
-            r_start, r_end = int(row*grid_size), int((row+height)*grid_size)
-            c_start, c_end = int(col*grid_size), int((col+width)*grid_size)
-            heatmap_data[r_start:r_end, c_start:c_end] = count
+            # Draw shadow
+            self.heatmap_plot.add_patch(patches.Rectangle((x+0.05, y-0.05), width, height, facecolor='darkgray', edgecolor='none', zorder=1))
+            
+            # Draw key background
+            self.heatmap_plot.add_patch(patches.Rectangle((x, y), width, height, facecolor=color, edgecolor='black', linewidth=1, zorder=2))
+            
+            # Draw key top (slightly smaller to create a 3D effect)
+            self.heatmap_plot.add_patch(patches.Rectangle((x+0.05, y+0.05), width-0.1, height-0.1, facecolor=color, edgecolor='black', linewidth=0.5, zorder=3))
+            
+            # Add text
+            lines = text.split("\n")
+            for i, line in enumerate(lines):
+                self.heatmap_plot.text(x + width/2, y + (i+1)/(len(lines)+1) * height, line, ha='center', va='center', fontdict={'size': 8}, color='black', zorder=4)
 
-        # 绘制热图
-        im = self.heatmap_plot.imshow(heatmap_data, cmap='YlOrRd', aspect='auto')
-        self.heatmap_figure.colorbar(im)
+        y_offset = 0
+        for row in keyboard_data:
+            x_offset = 0
+            width, height = 1, 1
+            for item in row:
+                if isinstance(item, dict):
+                    if 'x' in item:
+                        x_offset += float(item['x'])
+                    if 'y' in item:
+                        y_offset += float(item['y'])
+                    if 'w' in item:
+                        width = float(item['w'])
+                    if 'h' in item:
+                        height = float(item['h'])
+                    continue
+                if isinstance(item, str):
+                    key_name = item.split("\n")[-1].lower()
+                    count = key_counts.get(key_name, 0)
+                    draw_key(x_offset, y_offset, width, height, item, count)
+                x_offset += width
+                width, height = 1, 1
+            y_offset += 1
 
-        # 添加键盘标签
-        for key, (row, col, width, height) in keyboard_layout.items():
-            self.heatmap_plot.text(col*grid_size + width*grid_size/2, row*grid_size + height*grid_size/2, 
-                                key, ha='center', va='center', fontsize=6)
-
-        self.heatmap_plot.set_title("Keyboard Heatmap")
+        self.heatmap_plot.set_xlim(0, 23)
+        self.heatmap_plot.set_ylim(0, 6.6)
+        self.heatmap_plot.invert_yaxis()
+        self.heatmap_plot.set_aspect('equal')
         self.heatmap_plot.axis('off')
+        self.heatmap_plot.set_title("Keyboard Heatmap")
         self.heatmap_figure.tight_layout()
         self.heatmap_canvas.draw()
 
@@ -196,6 +202,7 @@ class StatisticsView(tk.Toplevel):
         """
         self.summary_text.delete(1.0, tk.END)
         self.summary_text.insert(tk.END, summary)
+
 
     def format_key_name(self, key_combination):
         special_keys = {
