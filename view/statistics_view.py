@@ -99,8 +99,8 @@ class StatisticsView(tk.Toplevel):
             [{"y":0.5},"~\n`","!\n1","@\n2","#\n3","$\n4","%\n5","^\n6","&\n7","*\n8","(\n9",")\n0","_\n-","+\n=",{"w":2},"Backspace",{"x":0.25},"Insert","Home","PgUp",{"x":0.25},"Num","/","*","-"],
             [{"w":1.5},"Tab","Q","W","E","R","T","Y","U","I","O","P","{\n[","}\n]",{"w":1.5},"|\n\\",{"x":0.25},"Delete","End","PgDn",{"x":0.25},"7\nHome","8\n↑","9\nPgUp",{"h":2},"+"],
             [{"w":1.75},"Caps","A","S","D","F","G","H","J","K","L",":\n;","\"\n'",{"w":2.25},"Enter",{"x":3.5},"4\n←","5","6\n→"],
-            [{"w":2.25},"Shift","Z","X","C","V","B","N","M","<\n,",">\n.","?\n/",{"w":2.75},"Shift",{"x":1.25},"↑",{"x":1.25},"1\nEnd","2\n↓","3\nPgDn",{"h":2},"Enter"],
-            [{"w":1.25},"Ctrl",{"w":1.25},"Win",{"w":1.25},"Alt",{"w":6.25},"",{"w":1.25},"Alt",{"w":1.25},"Win",{"w":1.25},"Menu",{"w":1.25},"Ctrl",{"x":0.25},"←","↓","→",{"x":0.25,"w":2},"0\nIns",".\nDel"]
+            [{"w":2.25},"Shift_L","Z","X","C","V","B","N","M","<\n,",">\n.","?\n/",{"w":2.75},"Shift_R",{"x":1.25},"↑",{"x":1.25},"1\nEnd","2\n↓","3\nPgDn",{"h":2},"Enter"],
+            [{"w":1.25},"Ctrl_L",{"w":1.25},"Win",{"w":1.25},"Alt_L",{"w":6.25},"Space",{"w":1.25},"Alt_R",{"w":1.25},"Win",{"w":1.25},"Menu",{"w":1.25},"Ctrl_R",{"x":0.25},"←","↓","→",{"x":0.25,"w":2},"0\nIns",".\nDel"]
         ]
 
         def draw_key(x, y, width, height, text, count):
@@ -146,7 +146,12 @@ class StatisticsView(tk.Toplevel):
                     continue
                 if isinstance(item, str):
                     key_name = item.split("\n")[-1].lower()
-                    count = key_counts.get(key_name, 0)
+                    if key_name in ['shift_l', 'shift_r', 'ctrl_l', 'ctrl_r', 'alt_l', 'alt_r', 'menu']:
+                        count = key_counts.get(key_name, 0)
+                    if key_name in ['win']:
+                        count = key_counts.get('cmd', 0) 
+                    else:
+                        count = key_counts.get(key_name, 0)
                     draw_key(x_offset, y_offset, width, height, item, count)
                 x_offset += width
                 width, height = 1, 1
