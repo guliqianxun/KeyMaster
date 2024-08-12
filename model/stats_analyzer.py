@@ -17,6 +17,7 @@ class StatsAnalyzer:
             time = datetime.strptime(str(event['time']), "%Y-%m-%d %H:%M:%S")
             action = event['action']
             key = event['key']
+            key = key.lower()
 
             if action in ['press', 'hotkey']:
                 if action == 'hotkey':
