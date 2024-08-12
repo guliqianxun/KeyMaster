@@ -18,6 +18,8 @@ class StatsAnalyzer:
             action = event['action']
             key = event['key']
             key = key.lower()
+            if 'numpad ' in key:
+                key = key.replace('numpad ', '')
 
             if action in ['press', 'hotkey']:
                 if action == 'hotkey':

@@ -168,22 +168,69 @@ class StatisticsView(tk.Toplevel):
 
     def update_key_freq_chart(self, key_counts):
         self.key_freq_plot.clear()
-        keys = [self.format_key_name(k) for k in key_counts.keys()]
+
+        # Prepare data
+        keys = list(key_counts.keys())
         counts = list(key_counts.values())
-        
-        # 限制显示的键数量，例如只显示前20个最常用的键
-        if len(keys) > 20:
-            sorted_items = sorted(zip(keys, counts), key=lambda x: x[1], reverse=True)
-            keys, counts = zip(*sorted_items[:20])
-        
-        self.key_freq_plot.bar(keys, counts)
-        self.key_freq_plot.set_title("Key Frequency (Top 20)")
-        self.key_freq_plot.set_xlabel("Keys")
-        self.key_freq_plot.set_ylabel("Frequency")
-        plt.setp(self.key_freq_plot.get_xticklabels(), rotation=45, ha='right')
+
+        # Categorize keys
+        char_keys = {k: v for k, v in key_counts.items() if len(k) == 1 and k.isalpha()}
+        func_keys = {k: v for k, v in key_counts.items() if len(k) > 1}
+        num_keys = {k: v for k, v in key_counts.items() if k.isdigit()}
+
+        num_pie_charts = sum(bool(d) for d in [char_keys, func_keys, num_keys])
+
+        # Create subplots
+        self.key_freq_figure.clear()
+        gs = self.key_freq_figure.add_gridspec(2, 3)
+        ax1 = self.key_freq_figure.add_subplot(gs[0, :])
+        ax2 = self.key_freq_figure.add_subplot(gs[1, 0])
+        ax3 = self.key_freq_figure.add_subplot(gs[1, 1])
+        ax4 = self.key_freq_figure.add_subplot(gs[1, 2])  # This will be used only if needed
+        self.key_freq_figure.suptitle('Key Frequency Analysis', fontsize=16)
+
+        # Histogram for all keys
+        sorted_items = sorted(key_counts.items(), key=lambda x: x[1], reverse=True)[:20]
+        keys, counts = zip(*sorted_items)
+        ax1.bar(keys, counts)
+        ax1.set_title('Key Frequency (Top 20)')
+        ax1.set_xlabel('Keys')
+        ax1.set_ylabel('Frequency')
+        plt.setp(ax1.get_xticklabels(), rotation=45, ha='right')
+
+        def create_pie_chart(ax, data, title):
+            sorted_data = sorted(data.items(), key=lambda x: x[1], reverse=True)
+            top_5 = sorted_data[:5]
+            other = sum(dict(sorted_data[5:]).values())
+            
+            labels = [key for key, _ in top_5] + (['Other'] if other else [])
+            sizes = [value for _, value in top_5] + ([other] if other else [])
+            
+            colors = plt.cm.Set3(np.linspace(0, 1, len(sizes)))
+            
+            wedges, texts, autotexts = ax.pie(sizes, colors=colors, autopct='%1.1f%%', startangle=90)
+            
+            for autotext in autotexts:
+                autotext.set_visible(False)
+            
+            ax.set_title(title)
+            ax.legend(wedges, labels, title="Keys", loc="center left", bbox_to_anchor=(1, 0, 0.5, 1))
+
+        # Pie charts
+        pie_charts = [
+            (ax2, char_keys, "Character Keys"),
+            (ax3, func_keys, "Function Keys"),
+            (ax4, num_keys, "Number Keys")
+        ]
+
+        for ax, data, title in pie_charts:
+            if data:
+                create_pie_chart(ax, data, title)
+            else:
+                ax.remove()  # Remove the axis if there's no data
+
         self.key_freq_figure.tight_layout()
         self.key_freq_canvas.draw()
-
     def update_hourly_dist_chart(self, hourly_counts):
         self.hourly_dist_plot.clear()
         hours = list(hourly_counts.keys())
