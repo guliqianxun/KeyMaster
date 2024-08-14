@@ -3,8 +3,6 @@ from collections import deque
 from datetime import datetime
 from simple_log_helper import CustomLogger
 
-
-
 class KeyLogger:
     def __init__(self, config, trigger_save):
         self.config = config
@@ -32,8 +30,16 @@ class KeyLogger:
             frozenset(['insert','shift']): 'Insert+Shift',
             frozenset(['insert','ctrl_l']): 'Insert+Ctrl',
             frozenset(['enter','shift']): 'Enter+Shift',
+            frozenset(['enter','ctrl_l']): 'Enter+Ctrl',
+            frozenset(['ctrl_l','/']): 'Ctrl+/',
+            frozenset(['ctrl_l','shift','/']): 'Ctrl+Shift+/',
+            frozenset(['ctrl_l','shift','N']): 'Ctrl+Shift+N',
+            frozenset(['ctrl_l','G']): 'Ctrl+G',
+            frozenset(['tab','shift']): 'Tab+Shift',
+            frozenset(['ctrl_l','insert']): 'Ctrl+Insert',
+            frozenset(['ctrl_l','shift','insert']): 'Ctrl+Shift+Insert',
+            frozenset(['shift','insert']): 'Shift+Insert',
         }
-
     def start_logging(self):
         self.listener = keyboard.Listener(
             on_press=self._on_press,
@@ -45,6 +51,8 @@ class KeyLogger:
             self.listener.stop()
 
     def _on_press(self, key):
+        if key == None:
+            return
         key_str = self._key_to_string(key)
         key_str = key_str.replace("Key.", "")
         timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -61,8 +69,9 @@ class KeyLogger:
                 self.trigger_save()
 
     def _on_release(self, key):
+        if key == None:
+            return
         key_str = self._key_to_string(key)
-        key_str = key_str.replace("Key.", "")
         if key_str in self.pressed_keys:
             self.pressed_keys.remove(key_str)
         timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -72,33 +81,31 @@ class KeyLogger:
             self.trigger_save()
 
     def _key_to_string(self, key):
-        if isinstance(key, int):
-            str_key = self._vk_to_string(key)
-            return str_key
-        elif hasattr(key, 'vk'):
-            # 处理带有 vk 属性的对象
-            str_key = self._vk_to_string(key.vk)
-            return str_key
-        elif isinstance(key, str):
-            # 处理普通字符串
-            return key
-        else:
-            # 处理其他类型的键对象
-            try:
-                return key.char
-            except AttributeError:
+        try:
+            if hasattr(key, 'name') and key.name:#default key is Enum
+                return str(key.name).replace("Key.", "")
+            elif hasattr(key, 'vk') and key.vk:#special key
+                return self._vk_to_string(key.vk)
+            else:
                 return str(key)
+        except AttributeError:
+            return str(key)
+            
+        
     def _vk_to_string(self, vk):
         if 65 <= vk <= 90:  # A-Z
             return chr(vk)
         elif 48 <= vk <= 57:  # 0-9
             return chr(vk)
         else:
-            # 扩展的特殊键映射
+            # Extended special key mapping
             special_keys = {
-                0x01: 'Ctrl',
-                0x02: 'Alt',
-                0x03: 'Break',
+                0x01: 'Left Mouse',
+                0x02: 'Right Mouse',
+                0x03: 'Control-break processing',
+                0x04: 'Middle Mouse',
+                0x05: 'X1 Mouse',
+                0x06: 'X2 Mouse',
                 0x08: 'Backspace',
                 0x09: 'Tab',
                 0x0C: 'Clear',
@@ -114,10 +121,10 @@ class KeyLogger:
                 0x22: 'Page Down',
                 0x23: 'End',
                 0x24: 'Home',
-                0x25: 'Left',
-                0x26: 'Up',
-                0x27: 'Right',
-                0x28: 'Down',
+                0x25: 'Left Arrow',
+                0x26: 'Up Arrow',
+                0x27: 'Right Arrow',
+                0x28: 'Down Arrow',
                 0x2C: 'Print Screen',
                 0x2D: 'Insert',
                 0x2E: 'Delete',
@@ -138,7 +145,7 @@ class KeyLogger:
                 0x69: 'Numpad 9',
                 0x6A: 'Numpad *',
                 0x6B: 'Numpad +',
-                0x6C: 'Numpad Separator',
+                0x6C: 'Separator',
                 0x6D: 'Numpad -',
                 0x6E: 'Numpad .',
                 0x6F: 'Numpad /',
@@ -193,7 +200,7 @@ class KeyLogger:
                 0xB6: 'Start Application 1',
                 0xB7: 'Start Application 2',
                 0xBA: ';',
-                0xBB: '+',
+                0xBB: '=',
                 0xBC: ',',
                 0xBD: '-',
                 0xBE: '.',
@@ -203,15 +210,10 @@ class KeyLogger:
                 0xDC: '\\',
                 0xDD: ']',
                 0xDE: "'",
+                0xDF: 'Office Home',
+                0xE0: 'Media Select',
             }
-            return special_keys.get(vk, f'{hex(vk)}')
-
-    # def _get_key_combination(self):
-    #     # 只使用当前按下的键
-    #     all_keys = [self._key_to_string(k) for k in self.pressed_keys]
-    #     # 去重并排序
-    #     unique_keys = sorted(set(all_keys))
-    #     return '+'.join(unique_keys)
+            return special_keys.get(vk, f'Unknown ({hex(vk)})')
     
     def _check_hotkey(self):
         current_keys = frozenset(self.pressed_keys)
