@@ -94,15 +94,7 @@ class StatisticsView(tk.Toplevel):
         self.heatmap_plot.clear()
         
         # Define the keyboard layout data
-        keyboard_data = [
-            ["Esc",{"x":1},"F1","F2","F3","F4",{"x":0.5},"F5","F6","F7","F8",{"x":0.5},"F9","F10","F11","F12",{"x":0.25},"PrtSc","ScrLk","Pause"],
-            [{"y":0.5},"~\n`","!\n1","@\n2","#\n3","$\n4","%\n5","^\n6","&\n7","*\n8","(\n9",")\n0","_\n-","+\n=",{"w":2},"Backspace",{"x":0.25},"Insert","Home","PgUp",{"x":0.25},"Num","/","*","-"],
-            [{"w":1.5},"Tab","Q","W","E","R","T","Y","U","I","O","P","{\n[","}\n]",{"w":1.5},"|\n\\",{"x":0.25},"Delete","End","PgDn",{"x":0.25},"7\nHome","8\n↑","9\nPgUp",{"h":2},"+"],
-            [{"w":1.75},"Caps","A","S","D","F","G","H","J","K","L",":\n;","\"\n'",{"w":2.25},"Enter",{"x":3.5},"4\n←","5","6\n→"],
-            [{"w":2.25},"Shift_L","Z","X","C","V","B","N","M","<\n,",">\n.","?\n/",{"w":2.75},"Shift_R",{"x":1.25},"↑",{"x":1.25},"1\nEnd","2\n↓","3\nPgDn",{"h":2},"Enter"],
-            [{"w":1.25},"Ctrl_L",{"w":1.25},"Win",{"w":1.25},"Alt_L",{"w":6.25},"Space",{"w":1.25},"Alt_R",{"w":1.25},"Win",{"w":1.25},"Menu",{"w":1.25},"Ctrl_R",{"x":0.25},"←","↓","→",{"x":0.25,"w":2},"0\nIns",".\nDel"]
-        ]
-
+        keyboard_data = self.controller.config.keyboard_layout
         def draw_key(x, y, width, height, text, count):
             if key_counts:
                 max_count = max(key_counts.values())
@@ -125,7 +117,8 @@ class StatisticsView(tk.Toplevel):
             self.heatmap_plot.add_patch(patches.Rectangle((x+0.05, y+0.05), width-0.1, height-0.1, facecolor=color, edgecolor='black', linewidth=0.5, zorder=3))
             
             # Add text
-            lines = text.split("\n")
+            display_text = self.controller.config.keyboard_mapping.get(text, text)
+            lines = display_text.split("\n")
             for i, line in enumerate(lines):
                 self.heatmap_plot.text(x + width/2, y + (i+1)/(len(lines)+1) * height, line, ha='center', va='center', fontdict={'size': 8}, color='black', zorder=4)
 
@@ -145,13 +138,7 @@ class StatisticsView(tk.Toplevel):
                         height = float(item['h'])
                     continue
                 if isinstance(item, str):
-                    key_name = item.split("\n")[-1].lower()
-                    if key_name in ['shift_l', 'shift_r', 'ctrl_l', 'ctrl_r', 'alt_l', 'alt_r', 'menu']:
-                        count = key_counts.get(key_name, 0)
-                    if key_name in ['win']:
-                        count = key_counts.get('cmd', 0) 
-                    else:
-                        count = key_counts.get(key_name, 0)
+                    count = key_counts.get(item, 0)
                     draw_key(x_offset, y_offset, width, height, item, count)
                 x_offset += width
                 width, height = 1, 1
