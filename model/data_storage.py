@@ -11,7 +11,13 @@ class DataStorage:
             return
 
         current_date = datetime.now().strftime("%Y-%m-%d")
-        csv_file = os.path.join(self.config.csv_folder, f"key_log_{current_date}.csv")
+        #store data in year/month/log.csv
+        year = current_date.split("-")[0]
+        month = current_date.split("-")[1]
+        #create folder if not exist
+        if not os.path.exists(os.path.join(self.config.csv_folder, year, month)):
+            os.makedirs(os.path.join(self.config.csv_folder, year, month))
+        csv_file = os.path.join(self.config.csv_folder, f"{year}/{month}/key_log_{current_date}.csv")
         
         file_exists = os.path.isfile(csv_file)
         
