@@ -5,9 +5,11 @@ from model.data_storage import DataStorage
 from model.stats_analyzer import StatsAnalyzer
 from view.main_window import MainWindow
 from view.statistics_view import StatisticsView
+from view.setting_window import SettingWindow
 from config import Config
 from controller.BackgroundController import BackgroundController
 from PIL import Image, ImageTk
+from view.setting_window import SettingWindow
 
 class AppController:
     def __init__(self):
@@ -17,6 +19,7 @@ class AppController:
         self.stats_analyzer = StatsAnalyzer()
         self.main_window = None
         self.stats_view = None
+        self.setting_window = None 
         self.running = True
         self.save_event = threading.Event()
         self.background_controller = BackgroundController(self)
@@ -24,7 +27,7 @@ class AppController:
     def run(self):
         self.background_controller.start()
         threading.Thread(target=self.run_tk_mainloop, daemon=True).start()
-        while self.running:  # 使用 self.running 而不是 self.background_controller.running
+        while self.running:  
             time.sleep(0.1)
         self.background_controller.tray_icon.stop() 
 
@@ -35,7 +38,7 @@ class AppController:
         photo = ImageTk.PhotoImage(icon)
         self.main_window.iconphoto(False, photo)
         self.main_window.protocol("WM_DELETE_WINDOW", self.hide_window)
-        self.main_window.mainloop()\
+        self.main_window.mainloop()
 
     def show_window(self):
         if not self.main_window:
@@ -80,18 +83,19 @@ class AppController:
         self.background_controller.stop()
         self.cleanup()  
         
-        # 关闭统计视图
         if self.stats_view and self.stats_view.winfo_exists():
             self.stats_view.destroy()
-        
-        # 关闭主窗口
+
+        if self.setting_window and self.setting_window.winfo_exists():
+            self.setting_window.destroy()
+
         if self.main_window:
             self.main_window.quit()
             self.main_window.destroy()
 
     def cleanup(self):
-            self.save_data()  # 保存最后的数据
-            self.key_logger.stop_logging()  
+        self.save_data() 
+        self.key_logger.stop_logging()  
 
     def show_statistics(self):
         if not self.stats_view or not self.stats_view.winfo_exists():
@@ -101,3 +105,11 @@ class AppController:
         stats = self.stats_analyzer.analyze_data(data)
         self.stats_view.update_charts(stats)
         self.stats_view.deiconify()
+
+    def show_settings(self):
+        """显示设置窗口"""
+        if not self.setting_window or not self.setting_window.winfo_exists():
+            self.setting_window = SettingWindow(self)
+        self.setting_window.deiconify()
+        self.setting_window.lift()
+        self.setting_window.focus_force()

@@ -5,8 +5,9 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import matplotlib.pyplot as plt
 import numpy as np
 from PIL import Image, ImageTk
+import matplotlib
 import matplotlib.patches as patches
-
+matplotlib.use('TkAgg')
 class StatisticsView(tk.Toplevel):
     def __init__(self, master, controller):
         super().__init__(master)

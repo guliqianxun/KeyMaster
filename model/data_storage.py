@@ -35,8 +35,9 @@ class DataStorage:
     def load_data(self, date=None):
         if date is None:
             date = datetime.now().strftime("%Y-%m-%d")
-        
-        csv_file = os.path.join(self.config.csv_folder, f"key_log_{date}.csv")
+        year = date.split("-")[0]
+        month = date.split("-")[1]
+        csv_file = os.path.join(self.config.csv_folder,year,month, f"key_log_{date}.csv")
         
         if not os.path.isfile(csv_file):
             return []

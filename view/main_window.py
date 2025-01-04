@@ -1,8 +1,10 @@
 import winreg
 import os
 import sys
-import tkinter as tk 
+import tkinter as tk
 from tkinter import ttk
+from tkinter import filedialog
+from tkinter import messagebox
 import tkinter.font as tkfont
 
 class MainWindow(tk.Tk):
@@ -10,44 +12,59 @@ class MainWindow(tk.Tk):
         super().__init__()
         self.controller = controller
         self.title(self.controller.config.title)
-        self.geometry("400x500")
-        self.configure(bg="#F0F0F0") 
+        self.geometry("400x550")
+        self.configure(bg="#F0F0F0")
         self.startup_var = tk.BooleanVar()
         self.startup_var.set(self.is_in_startup())
         self.create_widgets()
 
     def create_widgets(self):
-        # 创建自定义字体
         title_font = tkfont.Font(family="Helvetica", size=24, weight="bold")
         button_font = tkfont.Font(family="Helvetica", size=12)
 
-        # 标题框架
         title_frame = tk.Frame(self, bg="#4285F4", height=80)
         title_frame.pack(fill=tk.X)
-        
-        title_label = tk.Label(title_frame, text=self.controller.config.title, font=title_font, bg="#4285F4", fg="white")
+
+        title_label = tk.Label(
+            title_frame,
+            text=self.controller.config.title,
+            font=title_font,
+            bg="#4285F4",
+            fg="white",
+        )
         title_label.place(relx=0.5, rely=0.5, anchor="center")
 
-        # 主内容框架
         content_frame = tk.Frame(self, bg="#F0F0F0")
         content_frame.pack(expand=True, fill=tk.BOTH, padx=20, pady=20)
-
-        # 状态标签
-        self.status_label = tk.Label(content_frame, text=f"{self.controller.config.title} 正在运行...", 
-                                     font=("Helvetica", 12), bg="#F0F0F0", fg="#5F6368")
+        self.status_label = tk.Label(
+            content_frame,
+            text=f"{self.controller.config.title} 正在运行...",
+            font=("Helvetica", 12),
+            bg="#F0F0F0",
+            fg="#5F6368",
+        )
         self.status_label.pack(pady=20)
 
         # 创建按钮
         button_styles = [
             {"text": "手动保存", "bg": "#4CAF50", "command": self.controller.save_data},
             {"text": "查看统计", "bg": "#2196F3", "command": self.controller.show_statistics},
-            {"text": "退出", "bg": "#F44336", "command": self.quit}
+            {"text": "退出", "bg": "#F44336", "command": self.quit},
+            {"text": "设置", "bg": "#FFC107", "command": self.controller.show_settings},
         ]
 
         for style in button_styles:
-            button = tk.Button(content_frame, text=style["text"], font=button_font,
-                               bg=style["bg"], fg="white", relief=tk.FLAT,
-                               command=style["command"], width=15, height=2)
+            button = tk.Button(
+                content_frame,
+                text=style["text"],
+                font=button_font,
+                bg=style["bg"],
+                fg="white",
+                relief=tk.FLAT,
+                command=style["command"],
+                width=15,
+                height=2,
+            )
             button.pack(pady=10)
             button.bind("<Enter>", lambda e, b=button: self.on_hover(e, b))
             button.bind("<Leave>", lambda e, b=button: self.on_leave(e, b))
@@ -56,10 +73,13 @@ class MainWindow(tk.Tk):
         startup_frame = tk.Frame(content_frame, bg="#F0F0F0")
         startup_frame.pack(pady=10)
 
-        startup_checkbox = ttk.Checkbutton(startup_frame, text="开机自启动", 
-                                           variable=self.startup_var, 
-                                           command=self.toggle_startup,
-                                           style="TCheckbutton")
+        startup_checkbox = ttk.Checkbutton(
+            startup_frame,
+            text="开机自启动",
+            variable=self.startup_var,
+            command=self.toggle_startup,
+            style="TCheckbutton",
+        )
         startup_checkbox.pack(side=tk.LEFT)
 
         # Configure checkbutton style
@@ -77,8 +97,12 @@ class MainWindow(tk.Tk):
         key_path = r"Software\\Microsoft\Windows\\CurrentVersion\\Run"
 
         try:
-            key = winreg.OpenKey(winreg.HKEY_CURRENT_USER, key_path, 0, winreg.KEY_ALL_ACCESS)
-            winreg.SetValueEx(key, self.controller.config.title, 0, winreg.REG_SZ, file_path)
+            key = winreg.OpenKey(
+                winreg.HKEY_CURRENT_USER, key_path, 0, winreg.KEY_ALL_ACCESS
+            )
+            winreg.SetValueEx(
+                key, self.controller.config.title, 0, winreg.REG_SZ, file_path
+            )
             winreg.CloseKey(key)
             self.update_status("已添加到开机自启动")
         except WindowsError:
@@ -88,7 +112,9 @@ class MainWindow(tk.Tk):
         key_path = r"Software\\Microsoft\\Windows\\CurrentVersion\\Run"
 
         try:
-            key = winreg.OpenKey(winreg.HKEY_CURRENT_USER, key_path, 0, winreg.KEY_ALL_ACCESS)
+            key = winreg.OpenKey(
+                winreg.HKEY_CURRENT_USER, key_path, 0, winreg.KEY_ALL_ACCESS
+            )
             winreg.DeleteValue(key, self.controller.config.title)
             winreg.CloseKey(key)
             self.update_status("已从开机自启动中移除")
@@ -105,6 +131,7 @@ class MainWindow(tk.Tk):
             return True
         except WindowsError:
             return False
+
     def on_hover(self, event, button):
         button.config(bg=self.lighten_color(button.cget("bg")))
 
