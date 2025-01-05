@@ -6,7 +6,7 @@ class Config:
     CONFIG_FILE = os.path.join(os.path.expanduser("~"), ".keymaster_config.json")
 
     def __init__(self):
-        self.title = "KeyMaster v0.50"
+        self.title = "KeyMaster v0.52"
         self.csv_folder = resource_path("CSV")
         self.log_folder = resource_path("Logs")
         self.icon_path = resource_path("Resources/keyboard.ico")

@@ -6,7 +6,7 @@ from simple_log_helper import CustomLogger
 class KeyLogger:
     def __init__(self, config, trigger_save):
         self.config = config
-        self.logger = CustomLogger(__name__,log_filename=f'{self.config.csv_folder}/key_logger.log')
+        self.logger = CustomLogger(__name__,log_filename=f'{self.config.log_folder}/key_logger.log')
         self.keys = deque(maxlen=self.config.buffer_size)
         self.trigger_save = trigger_save
         self.pressed_keys = set()

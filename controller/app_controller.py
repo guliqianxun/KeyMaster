@@ -9,7 +9,6 @@ from view.setting_window import SettingWindow
 from config import Config
 from controller.BackgroundController import BackgroundController
 from PIL import Image, ImageTk
-from view.setting_window import SettingWindow
 
 class AppController:
     def __init__(self):
@@ -29,7 +28,7 @@ class AppController:
         threading.Thread(target=self.run_tk_mainloop, daemon=True).start()
         while self.running:  
             time.sleep(0.1)
-        self.background_controller.tray_icon.stop() 
+        self.background_controller.stop()
 
     def run_tk_mainloop(self):
         if not self.main_window:

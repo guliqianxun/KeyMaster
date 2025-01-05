@@ -3,8 +3,6 @@ import os
 import sys
 import tkinter as tk
 from tkinter import ttk
-from tkinter import filedialog
-from tkinter import messagebox
 import tkinter.font as tkfont
 
 class MainWindow(tk.Tk):
@@ -139,12 +137,12 @@ class MainWindow(tk.Tk):
         button.config(bg=self.darken_color(button.cget("bg")))
 
     def lighten_color(self, color):
-        # 简单的颜色变亮函数
+        # 颜色变亮
         r, g, b = self.winfo_rgb(color)
         return f"#{min(r+1000, 65535):04x}{min(g+1000, 65535):04x}{min(b+1000, 65535):04x}"
 
     def darken_color(self, color):
-        # 简单的颜色变暗函数
+        # 颜色变暗
         r, g, b = self.winfo_rgb(color)
         return f"#{max(r-1000, 0):04x}{max(g-1000, 0):04x}{max(b-1000, 0):04x}"
 

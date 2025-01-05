@@ -24,6 +24,7 @@ class BackgroundController:
         self.key_logger.stop_logging()
         if self.tray_icon:
             self.tray_icon.stop()
+            self.tray_icon = None 
         if self.auto_save_thread:
             self.auto_save_thread.join(timeout=2)
 
@@ -43,14 +44,17 @@ class BackgroundController:
         self.save_event.set()
 
     def create_tray_icon(self):
+        if self.tray_icon is not None:
+            return 
         image = self.create_tray_image()
         menu = pystray.Menu(
-            pystray.MenuItem("显示", self.app_controller.show_window,default=True),
+            pystray.MenuItem("显示", self.app_controller.show_window, default=True),
             pystray.MenuItem("退出", self.app_controller.quit_app)
         )
         self.tray_icon = pystray.Icon(f"{self.config.title}", image, f"{self.config.title}", menu)
         self.tray_icon.on_click = self.on_tray_click
-        threading.Thread(target=self.tray_icon.run, daemon=True).start() 
+        threading.Thread(target=self.tray_icon.run, daemon=True).start()
+
 
     def on_tray_click(self, icon, button):
         if button == pystray.MouseButton.LEFT:
