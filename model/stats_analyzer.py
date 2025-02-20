@@ -4,33 +4,39 @@ from datetime import datetime, timedelta
 class StatsAnalyzer:
     def analyze_data(self, data):
         if not data:
-            return {}
+            empty_hourly_counts = {i: 0 for i in range(24)}
+            return {
+                'key_counts': {},
+                'key_release_counts': {},
+                'hourly_counts': empty_hourly_counts,
+                'total_duration': timedelta(0),
+                'total_keystrokes': 0,
+                'keystrokes_per_minute': 0,
+                'start_time': datetime.now(),
+                'end_time': datetime.now()
+            }
 
         key_counts = Counter()
         key_release_counts = Counter()
         hourly_counts = {i: 0 for i in range(24)}
         
-        start_time = datetime.strptime(str(data[0]['time']), "%Y-%m-%d %H:%M:%S")
-        end_time = datetime.strptime(str(data[-1]['time']), "%Y-%m-%d %H:%M:%S")
+        # 使用列表的第一个和最后一个元素获取时间范围
+        start_time = data[0]['time']
+        end_time = data[-1]['time']
         
         for event in data:
-            time = datetime.strptime(str(event['time']), "%Y-%m-%d %H:%M:%S")
+            time = event['time']  # 现在直接是 datetime 对象
             action = event['action']
-            key = event['key']
-            key = key.lower()
+            key = str(event['key']).lower()
 
             if action in ['press', 'hotkey']:
-                if action == 'hotkey':
-                    key_counts[key] += 1
-                else:
-                    key_counts[key] += 1
+                key_counts[key] += 1
             if action == 'release':
                 key_release_counts[key] += 1
                 hourly_counts[time.hour] += 1
 
         total_duration = end_time - start_time
         total_keystrokes = sum(key_counts.values())
-        print(dict(key_release_counts))
 
         return {
             'key_counts': dict(key_counts),

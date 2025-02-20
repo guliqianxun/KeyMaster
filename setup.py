@@ -10,7 +10,7 @@ def collect_data_files(directory):
 
 setup(
     name='keyboard-master',
-    version='0.50',
+    version='0.53',
     description='Keyboard Master Application',
     author='Zhiheng Liu',
     author_email='visitorindark@gmail.com',

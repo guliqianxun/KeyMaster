@@ -24,6 +24,19 @@ class StatisticsView(tk.Toplevel):
         self.destroy()
 
     def create_widgets(self):
+        # Add date selection frame at the top
+        self.date_frame = ttk.Frame(self)
+        self.date_frame.pack(fill='x', padx=5, pady=5)
+        
+        ttk.Label(self.date_frame, text="Select Date:").pack(side=tk.LEFT, padx=5)
+        self.date_combobox = ttk.Combobox(self.date_frame, state="readonly")
+        self.date_combobox.pack(side=tk.LEFT, padx=5)
+        self.date_combobox.bind('<<ComboboxSelected>>', self.on_date_selected)
+        
+        # Update available dates
+        self.update_available_dates()
+        
+        # Create notebook after date selection
         self.notebook = ttk.Notebook(self)
         self.notebook.pack(expand=True, fill='both')
 
@@ -279,3 +292,17 @@ class StatisticsView(tk.Toplevel):
         formatted_parts.sort(key=lambda x: (x not in special_keys.values(), x))
         
         return ' + '.join(formatted_parts)
+
+    def update_available_dates(self):
+        """Update the date combobox with available dates from the data folder"""
+        available_dates = self.controller.data_storage.get_available_dates()
+        if available_dates:
+            self.date_combobox['values'] = available_dates
+            self.date_combobox.set(available_dates[-1])  # Select most recent date
+            
+    def on_date_selected(self, event):
+        """Handle date selection change"""
+        selected_date = self.date_combobox.get()
+        data = self.controller.data_storage.load_data(selected_date)
+        stats = self.controller.stats_analyzer.analyze_data(data)
+        self.update_charts(stats)

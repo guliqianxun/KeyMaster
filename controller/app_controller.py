@@ -1,4 +1,5 @@
 import threading
+import os
 import time
 from model.key_logger import KeyLogger
 from model.data_storage import DataStorage
@@ -9,6 +10,9 @@ from view.setting_window import SettingWindow
 from config import Config
 from controller.BackgroundController import BackgroundController
 from PIL import Image, ImageTk
+from simple_log_helper import CustomLogger
+
+
 
 class AppController:
     def __init__(self):
@@ -22,6 +26,8 @@ class AppController:
         self.running = True
         self.save_event = threading.Event()
         self.background_controller = BackgroundController(self)
+        log_dir = os.path.normpath(self.config.log_folder)
+        self.logger = CustomLogger(__name__,log_filename=f"{log_dir}/app_controller.log")
 
     def run(self):
         self.background_controller.start()
@@ -97,11 +103,19 @@ class AppController:
         self.key_logger.stop_logging()  
 
     def show_statistics(self):
+        self.logger.info("显示统计信息")
         if not self.stats_view or not self.stats_view.winfo_exists():
             self.stats_view = StatisticsView(self.main_window, self)
         
         data = self.data_storage.load_data()
         stats = self.stats_analyzer.analyze_data(data)
+        if len(data) == 0:
+            self.logger.warning(f"没有数据,路径: {self.config.csv_folder}")
+            return
+        if not stats:
+            self.logger.warning(f"没有统计数据")
+            return
+
         self.stats_view.update_charts(stats)
         self.stats_view.deiconify()
 
